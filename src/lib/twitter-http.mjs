@@ -81,13 +81,23 @@ function readCookies(cookiesFilePath) {
 
 async function makeHeaders(method, apiPath, cookiesFilePath) {
   const { cookieStr, ct0 } = readCookies(cookiesFilePath);
-  const ct = await getClientTransaction();
-  const txId = await ct.generateTransactionId(method, apiPath);
-  return {
+
+  // x-client-transaction-id is best-effort: the lib breaks when X changes its
+  // frontend build (the x-web/Vite migration dropped the "ondemand.s" chunk).
+  // Cookie+ct0 auth requests succeed without it, so don't fail the whole
+  // request if generation throws — just omit the header.
+  let txId = '';
+  try {
+    const ct = await getClientTransaction();
+    txId = await ct.generateTransactionId(method, apiPath);
+  } catch (err) {
+    console.warn(`[twitter-http] x-client-transaction-id unavailable, proceeding without it: ${err?.message || err}`);
+  }
+
+  const headers = {
     authorization: BEARER,
     cookie: cookieStr,
     'x-csrf-token': ct0,
-    'x-client-transaction-id': txId,
     'x-twitter-active-user': 'yes',
     'x-twitter-auth-type': 'OAuth2Session',
     'content-type': 'application/json',
@@ -97,6 +107,8 @@ async function makeHeaders(method, apiPath, cookiesFilePath) {
     referer: 'https://x.com/',
     origin: 'https://x.com',
   };
+  if (txId) headers['x-client-transaction-id'] = txId;
+  return headers;
 }
 
 const TWEET_FEATURES = {
@@ -373,13 +385,17 @@ export async function favoriteTweet(tweetId, cookiesFilePath) {
 export async function followUser(userId, cookiesFilePath) {
   const apiPath = `/i/api/1.1/friendships/create.json`;
   const { cookieStr, ct0 } = readCookies(cookiesFilePath);
-  const ct = await getClientTransaction();
-  const txId = await ct.generateTransactionId('POST', apiPath);
+  let txId = '';
+  try {
+    const ct = await getClientTransaction();
+    txId = await ct.generateTransactionId('POST', apiPath);
+  } catch (err) {
+    console.warn(`[twitter-http] x-client-transaction-id unavailable, proceeding without it: ${err?.message || err}`);
+  }
   const headers = {
     authorization: BEARER,
     cookie: cookieStr,
     'x-csrf-token': ct0,
-    'x-client-transaction-id': txId,
     'x-twitter-active-user': 'yes',
     'x-twitter-auth-type': 'OAuth2Session',
     'content-type': 'application/x-www-form-urlencoded',
@@ -388,6 +404,7 @@ export async function followUser(userId, cookiesFilePath) {
     referer: 'https://x.com/',
     origin: 'https://x.com',
   };
+  if (txId) headers['x-client-transaction-id'] = txId;
   const payload = `user_id=${encodeURIComponent(userId)}&include_profile_interstitial_type=1&skip_status=true`;
   const result = await httpRequest('POST', 'x.com', apiPath, headers, payload);
   if (result.status === 429 || result.status === 403) throw new Error(`RATE_LIMITED ${result.status}`);
@@ -398,13 +415,17 @@ export async function followUser(userId, cookiesFilePath) {
 export async function getFriendship(username, cookiesFilePath) {
   const apiPath = `/i/api/1.1/friendships/show.json?screen_name=${encodeURIComponent(username)}`;
   const { cookieStr, ct0 } = readCookies(cookiesFilePath);
-  const ct = await getClientTransaction();
-  const txId = await ct.generateTransactionId('GET', apiPath);
+  let txId = '';
+  try {
+    const ct = await getClientTransaction();
+    txId = await ct.generateTransactionId('GET', apiPath);
+  } catch (err) {
+    console.warn(`[twitter-http] x-client-transaction-id unavailable, proceeding without it: ${err?.message || err}`);
+  }
   const headers = {
     authorization: BEARER,
     cookie: cookieStr,
     'x-csrf-token': ct0,
-    'x-client-transaction-id': txId,
     'x-twitter-active-user': 'yes',
     'x-twitter-auth-type': 'OAuth2Session',
     'user-agent': UA,
@@ -412,6 +433,7 @@ export async function getFriendship(username, cookiesFilePath) {
     referer: 'https://x.com/',
     origin: 'https://x.com',
   };
+  if (txId) headers['x-client-transaction-id'] = txId;
   const result = await httpRequest('GET', 'x.com', apiPath, headers);
   if (result.status !== 200) return null;
   return JSON.parse(result.body);
