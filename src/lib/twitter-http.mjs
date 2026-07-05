@@ -207,6 +207,8 @@ function parseTweetEntry(entry) {
     lang: legacy.lang,
     inReplyToStatusId: legacy.in_reply_to_status_id_str || null,
     isRetweet: Boolean(legacy.retweeted_status_result) || Boolean(legacy.retweeted_status_id_str),
+    favoriteCount: legacy.favorite_count || 0,
+    retweetCount: legacy.retweet_count || 0,
   };
 }
 

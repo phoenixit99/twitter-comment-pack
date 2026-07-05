@@ -29,6 +29,24 @@ Tweet content:
 Reply with ONLY the comment text. Nothing else.`;
 }
 
+function buildPostPrompt({ tweetText, lang, style }) {
+  const styleLine = style && style.trim()
+    ? `Style/persona: ${style.trim()}`
+    : 'Style: human, natural — not robotic.';
+  return `You are a creative content creator on Twitter. Read the following tweet and write a completely NEW, standalone post (NOT a reply) inspired by it. Your new post must be:
+- 1-3 sentences max (under 280 characters)
+- Express a similar or expanded viewpoint, but worded completely differently
+- Human and natural, NOT robotic or AI-sounding
+- No hashtags, no URLs, minimal emoji
+- ${LANG_INSTRUCTION[lang] || LANG_INSTRUCTION.en}
+- ${styleLine}
+
+Source inspiration tweet:
+"${tweetText.slice(0, 500)}"
+
+Reply with ONLY the new post text. Nothing else.`;
+}
+
 async function callDeepseek({ apiKey, model, prompt }) {
   const res = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
@@ -95,5 +113,18 @@ export async function generateComment({ tweetText, lang, style, ai }) {
 
   if (!text) throw new Error('AI returned empty comment');
   // Strip surrounding quotes if model added them
+  return text.replace(/^["'`]+|["'`]+$/g, '').trim();
+}
+
+export async function generatePost({ tweetText, lang, style, ai }) {
+  const prompt = buildPostPrompt({ tweetText, lang, style });
+  const provider = (ai.provider || 'deepseek').toLowerCase();
+  let text = '';
+  if (provider === 'deepseek') text = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt });
+  else if (provider === 'openai') text = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt });
+  else if (provider === 'anthropic') text = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt });
+  else throw new Error(`Unknown AI provider: ${provider}`);
+
+  if (!text) throw new Error('AI returned empty post');
   return text.replace(/^["'`]+|["'`]+$/g, '').trim();
 }

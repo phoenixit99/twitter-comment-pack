@@ -105,22 +105,34 @@ function normalizeCookies(raw) {
   console.log('  A = List comment (you give list IDs, bot comments per language/style)');
   console.log('  B = Amplify (when you post, bot comments on hashtag tweets pointing back)');
   console.log('  C = Hybrid (alternate A and B)');
+  console.log('  D = Auto Post (scan list, use top tweets as inspiration to auto post)');
+  console.log('  E = Hybrid A & D (alternate A and D)');
   console.log('  See guides/03-modes-explained.md for full details.');
   let mode = '';
-  while (!['A', 'B', 'C'].includes(mode)) {
-    mode = (await ask('Choose mode (A/B/C) [A]: ')).toUpperCase() || 'A';
+  while (!['A', 'B', 'C', 'D', 'E'].includes(mode)) {
+    mode = (await ask('Choose mode (A/B/C/D/E) [A]: ')).toUpperCase() || 'A';
   }
 
   const modeA = { listIds: [], language: 'auto', stylePrompt: '' };
   const modeB = { ownerUsername: '', hashtags: ['#XAUUSD', '#Gold', '#Crypto', '#Bitcoin'], crossPostListId: '' };
+  const modeD = { listIds: [], language: 'auto', stylePrompt: '' };
 
-  if (mode === 'A' || mode === 'C') {
+  if (mode === 'A' || mode === 'C' || mode === 'E') {
     const ids = await ask('  List IDs (comma-separated): ');
     modeA.listIds = ids.split(',').map((s) => s.trim()).filter(Boolean);
     const lang = await ask('  Language (auto|en|ja|ko|zh) [auto]: ') || 'auto';
     modeA.language = lang;
     const style = await ask('  Style/persona prompt (free text, e.g. "trader chuyen nghiep, ngan gon duoi 200 ky tu"): ');
     modeA.stylePrompt = style;
+  }
+  
+  if (mode === 'D' || mode === 'E') {
+    const ids = await ask('  Mode D / Auto Post - List IDs (comma-separated): ');
+    modeD.listIds = ids.split(',').map((s) => s.trim()).filter(Boolean);
+    const lang = await ask('  Language (auto|en|ja|ko|zh) [auto]: ') || 'auto';
+    modeD.language = lang;
+    const style = await ask('  Style/persona prompt (e.g. "nhan dinh rieng, giong dieu chuyen gia"): ');
+    modeD.stylePrompt = style;
   }
   if (mode === 'B' || mode === 'C') {
     modeB.ownerUsername = await ask('  Your Twitter @username (no @): ');
@@ -149,6 +161,7 @@ function normalizeCookies(raw) {
     mode,
     modeA,
     modeB,
+    modeD,
     commentsPerHour: rate,
     delayMinMs: 60000,
     delayMaxMs: 240000,

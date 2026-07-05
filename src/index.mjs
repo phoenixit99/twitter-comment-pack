@@ -9,6 +9,8 @@ import { sendAlert } from './lib/telegram.mjs';
 import { runListMode } from './modes/list-comment.mjs';
 import { runAmplifyMode } from './modes/amplify.mjs';
 import { runHybridMode } from './modes/hybrid.mjs';
+import { runHybridADMode } from './modes/hybrid-ad.mjs';
+import { runAutoPostMode } from './modes/auto-post.mjs';
 import { runWarmup } from './warmup.mjs';
 
 const DEBUG = process.argv.includes('--debug');
@@ -48,6 +50,8 @@ async function main() {
       if (cfg.mode === 'A') await runListMode(cfg, log);
       else if (cfg.mode === 'B') await runAmplifyMode(cfg, log);
       else if (cfg.mode === 'C') await runHybridMode(cfg, log);
+      else if (cfg.mode === 'D') await runAutoPostMode(cfg, log);
+      else if (cfg.mode === 'E') await runHybridADMode(cfg, log);
     } catch (e) {
       log(`Loop error: ${e.message}`);
       if (/SESSION_EXPIRED|401|403/.test(e.message)) {
