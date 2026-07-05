@@ -199,6 +199,12 @@ function parseTweetEntry(entry) {
     userResult?.core?.screen_name ||
     userResult?.legacy?.screen_name ||
     'unknown';
+  const media = legacy.extended_entities?.media || legacy.entities?.media || [];
+  const mediaUrls = media
+    .filter(m => m.type === 'photo')
+    .map(m => m.media_url_https || m.media_url)
+    .filter(Boolean);
+
   return {
     id: tweet.rest_id || tweet.tweet?.rest_id || legacy.id_str,
     fullText: legacy.full_text || '',
@@ -209,6 +215,7 @@ function parseTweetEntry(entry) {
     isRetweet: Boolean(legacy.retweeted_status_result) || Boolean(legacy.retweeted_status_id_str),
     favoriteCount: legacy.favorite_count || 0,
     retweetCount: legacy.retweet_count || 0,
+    mediaUrls,
   };
 }
 
@@ -439,4 +446,31 @@ export async function getFriendship(username, cookiesFilePath) {
   const result = await httpRequest('GET', 'x.com', apiPath, headers);
   if (result.status !== 200) return null;
   return JSON.parse(result.body);
+}
+
+export async function uploadImageFromUrl(imageUrl, cookiesFilePath) {
+  const imgBuffer = await new Promise((resolve, reject) => {
+    https.get(imageUrl, (res) => {
+      if (res.statusCode !== 200) {
+        return reject(new Error(`Failed to download image: ${res.statusCode}`));
+      }
+      const data = [];
+      res.on('data', (chunk) => data.push(chunk));
+      res.on('end', () => resolve(Buffer.concat(data)));
+      res.on('error', reject);
+    }).on('error', reject);
+  });
+  const b64 = imgBuffer.toString('base64');
+  
+  const headers = await makeHeaders('POST', '/i/media/upload.json', cookiesFilePath);
+  headers['content-type'] = 'application/x-www-form-urlencoded';
+  
+  const body = 'media_data=' + encodeURIComponent(b64);
+  const result = await httpRequest('POST', 'upload.twitter.com', '/i/media/upload.json', headers, body);
+  
+  if (result.status !== 200) {
+    throw new Error(`Media upload failed (${result.status}): ${result.body.slice(0, 200)}`);
+  }
+  const data = JSON.parse(result.body);
+  return data.media_id_string;
 }

@@ -2,11 +2,11 @@
  * Mode D — Auto Post based on list scan
  * Crawls lists, finds top engaged tweets, uses them as inspiration to write a new post.
  */
-import { fetchListTweets, postTweet } from '../lib/twitter-http.mjs';
+import { fetchListTweets, postTweet, uploadImageFromUrl } from '../lib/twitter-http.mjs';
 import { detectLanguage } from '../lib/language.mjs';
 import { generatePost } from '../lib/ai-commenter.mjs';
 import { alreadyCommented, markPosted, alreadyPosted } from '../lib/store.mjs';
-import { waitForPostSlot, postSleep } from '../lib/rate-limiter.mjs';
+import { waitForSlot, postSleep } from '../lib/rate-limiter.mjs';
 import { sendAlert } from '../lib/telegram.mjs';
 
 export async function runAutoPostMode(cfg, log) {
@@ -48,7 +48,7 @@ export async function runAutoPostMode(cfg, log) {
   });
 
   for (const t of pool) {
-    await waitForPostSlot(cfg, log);
+    await waitForSlot(cfg, log);
     const langSetting = cfg.modeD?.language || 'auto';
     const lang = langSetting === 'auto' ? detectLanguage(t.fullText) : langSetting;
 
@@ -65,10 +65,24 @@ export async function runAutoPostMode(cfg, log) {
       continue;
     }
 
+    let mediaIds = [];
+    if (t.mediaUrls && t.mediaUrls.length > 0) {
+      log(`[mode-D] Inspiration tweet has ${t.mediaUrls.length} image(s). Uploading...`);
+      for (const imgUrl of t.mediaUrls) {
+        try {
+          const mId = await uploadImageFromUrl(imgUrl, cfg.cookiesFile);
+          if (mId) mediaIds.push(mId);
+        } catch (e) {
+          log(`[mode-D] Failed to upload image ${imgUrl}: ${e.message}`);
+        }
+      }
+    }
+
     try {
-      await postTweet(postContent, cfg.cookiesFile, {});
+      await postTweet(postContent, cfg.cookiesFile, { mediaIds });
       markPosted(t.id, t.author);
       log(`[mode-D] OK auto-post inspired by ${t.id} @${t.author} lang=${lang} "${postContent.slice(0, 60)}..."`);
+      break; // Only one post per cycle
     } catch (e) {
       log(`[mode-D] post fail for inspiration ${t.id}: ${e.message}`);
       if (/RATE_LIMITED/.test(e.message)) {

@@ -63,6 +63,7 @@ export async function runListMode(cfg, log) {
       await postTweet(comment, cfg.cookiesFile, { replyToId: t.id });
       markCommented(t.id, t.author);
       log(`[mode-A] OK reply ${t.id} @${t.author} lang=${lang} "${comment.slice(0, 60)}..."`);
+      break; // Only one comment per cycle
     } catch (e) {
       log(`[mode-A] post fail ${t.id}: ${e.message}`);
       if (/RATE_LIMITED/.test(e.message)) {
