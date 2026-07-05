@@ -93,9 +93,9 @@ export function markPosted(tweetId, author = '') {
     .run(tweetId, Date.now(), author);
 }
 
-export function postsInLast24Hours() {
+export function postsInLastHour() {
   if (!db) return 0;
-  const since = Date.now() - 24 * 60 * 60 * 1000;
+  const since = Date.now() - 60 * 60 * 1000;
   const row = db.prepare('SELECT COUNT(*) AS c FROM posted WHERE ts >= ?').get(since);
   return row.c;
 }

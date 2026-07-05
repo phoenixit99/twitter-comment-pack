@@ -1,4 +1,4 @@
-import { commentsInLastHour, postsInLast24Hours, timeSinceLastPost } from './store.mjs';
+import { commentsInLastHour, postsInLastHour, timeSinceLastPost } from './store.mjs';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -15,16 +15,16 @@ export async function waitForSlot(cfg, log) {
 
 export async function waitForPostSlot(cfg, log) {
   while (true) {
-    const postsPerDay = cfg.postsPerDay || 5;
-    const count24h = postsInLast24Hours();
-    if (count24h >= postsPerDay) {
-      const waitMs = 60 * 60_000 + Math.floor(Math.random() * 5 * 60_000); // Wait ~1 hour
-      log(`[rate] post cap ${count24h}/${postsPerDay} per day reached — sleeping ${Math.round(waitMs / 1000)}s`);
+    const postsPerHour = cfg.postsPerHour || 1; // default 1 per hour if not set
+    const count1h = postsInLastHour();
+    if (count1h >= postsPerHour) {
+      const waitMs = 5 * 60_000 + Math.floor(Math.random() * 5 * 60_000); // Wait ~5-10 mins
+      log(`[rate] post cap ${count1h}/${postsPerHour} per hour reached — sleeping ${Math.round(waitMs / 1000)}s`);
       await sleep(waitMs);
       continue;
     }
 
-    const minGapMs = (24 * 60 * 60 * 1000) / postsPerDay;
+    const minGapMs = (60 * 60 * 1000) / postsPerHour;
     const elapsed = timeSinceLastPost();
     if (elapsed < minGapMs) {
       const remainder = minGapMs - elapsed;
