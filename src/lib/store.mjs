@@ -17,6 +17,13 @@ export function initStore(dbPath = 'data/store.db') {
     );
     CREATE INDEX IF NOT EXISTS idx_commented_ts ON commented(ts);
 
+    CREATE TABLE IF NOT EXISTS posted (
+      tweet_id TEXT PRIMARY KEY,
+      ts INTEGER NOT NULL,
+      author TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_posted_ts ON posted(ts);
+
     CREATE TABLE IF NOT EXISTS warmup_state (
       target TEXT NOT NULL,
       tweet_id TEXT NOT NULL,
@@ -73,4 +80,29 @@ export function getMeta(k) {
 
 export function setMeta(k, v) {
   db.prepare('INSERT OR REPLACE INTO meta(k, v) VALUES(?, ?)').run(k, String(v));
+}
+
+export function alreadyPosted(tweetId) {
+  if (!db) return false;
+  const row = db.prepare('SELECT 1 FROM posted WHERE tweet_id = ?').get(tweetId);
+  return !!row;
+}
+
+export function markPosted(tweetId, author = '') {
+  db.prepare('INSERT OR REPLACE INTO posted(tweet_id, ts, author) VALUES(?, ?, ?)')
+    .run(tweetId, Date.now(), author);
+}
+
+export function postsInLast24Hours() {
+  if (!db) return 0;
+  const since = Date.now() - 24 * 60 * 60 * 1000;
+  const row = db.prepare('SELECT COUNT(*) AS c FROM posted WHERE ts >= ?').get(since);
+  return row.c;
+}
+
+export function timeSinceLastPost() {
+  if (!db) return Infinity;
+  const row = db.prepare('SELECT ts FROM posted ORDER BY ts DESC LIMIT 1').get();
+  if (!row) return Infinity;
+  return Date.now() - row.ts;
 }

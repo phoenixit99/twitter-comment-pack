@@ -146,6 +146,12 @@ function normalizeCookies(raw) {
   console.log('See guides/04-rate-limits.md. Safe: 10-20/hr. Aggressive: 20-30. >30 risky.');
   const rateRaw = await ask('Comments per hour [15]: ');
   const rate = parseInt(rateRaw, 10) || 15;
+  
+  let postsPerDay = 5;
+  if (mode === 'D' || mode === 'E') {
+    const postRateRaw = await ask('Auto-Posts per day [5]: ');
+    postsPerDay = parseInt(postRateRaw, 10) || 5;
+  }
 
   // Q5: AI
   console.log('\n--- Question 5/5: AI provider ---');
@@ -163,6 +169,7 @@ function normalizeCookies(raw) {
     modeB,
     modeD,
     commentsPerHour: rate,
+    postsPerDay,
     delayMinMs: 60000,
     delayMaxMs: 240000,
     ai: { provider, apiKey, model },
