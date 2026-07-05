@@ -5,8 +5,8 @@
 import { fetchListTweets, postTweet } from '../lib/twitter-http.mjs';
 import { detectLanguage } from '../lib/language.mjs';
 import { generatePost } from '../lib/ai-commenter.mjs';
-import { alreadyCommented, markCommented } from '../lib/store.mjs';
-import { waitForSlot, postSleep } from '../lib/rate-limiter.mjs';
+import { alreadyCommented, markPosted, alreadyPosted } from '../lib/store.mjs';
+import { waitForPostSlot, postSleep } from '../lib/rate-limiter.mjs';
 import { sendAlert } from '../lib/telegram.mjs';
 
 export async function runAutoPostMode(cfg, log) {
@@ -25,7 +25,7 @@ export async function runAutoPostMode(cfg, log) {
         if (!t.id || !t.fullText || t.fullText.length < 10) continue;
         if (t.isRetweet) continue;
         if (seen.has(t.id)) continue;
-        if (alreadyCommented(t.id)) continue;
+        if (alreadyCommented(t.id) || alreadyPosted(t.id)) continue;
         seen.add(t.id);
         pool.push(t);
       }
@@ -48,7 +48,7 @@ export async function runAutoPostMode(cfg, log) {
   });
 
   for (const t of pool) {
-    await waitForSlot(cfg, log);
+    await waitForPostSlot(cfg, log);
     const langSetting = cfg.modeD?.language || 'auto';
     const lang = langSetting === 'auto' ? detectLanguage(t.fullText) : langSetting;
 
@@ -67,7 +67,7 @@ export async function runAutoPostMode(cfg, log) {
 
     try {
       await postTweet(postContent, cfg.cookiesFile, {});
-      markCommented(t.id, t.author);
+      markPosted(t.id, t.author);
       log(`[mode-D] OK auto-post inspired by ${t.id} @${t.author} lang=${lang} "${postContent.slice(0, 60)}..."`);
     } catch (e) {
       log(`[mode-D] post fail for inspiration ${t.id}: ${e.message}`);

@@ -20,6 +20,7 @@ function validate(cfg) {
   if (!cfg.mode || !['A', 'B', 'C', 'D', 'E'].includes(cfg.mode)) throw new Error('config.mode must be A, B, C, D, or E');
   if (!cfg.ai || !cfg.ai.provider || !cfg.ai.apiKey) throw new Error('config.ai.{provider,apiKey} required');
   if (!cfg.commentsPerHour) cfg.commentsPerHour = 15;
+  if (!cfg.postsPerDay) cfg.postsPerDay = 5;
 }
 
 export const CONFIG_FILE_PATH = CONFIG_PATH;
