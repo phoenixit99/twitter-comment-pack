@@ -15,17 +15,10 @@ export async function waitForSlot(cfg, log) {
 
 export async function waitForPostSlot(cfg, log) {
   while (true) {
-    const postsPerHour = cfg.postsPerHour || 1; // default 1 per hour if not set
-    const count1h = postsInLastHour();
-    if (count1h >= postsPerHour) {
-      const waitMs = 5 * 60_000 + Math.floor(Math.random() * 5 * 60_000); // Wait ~5-10 mins
-      log(`[rate] post cap ${count1h}/${postsPerHour} per hour reached — sleeping ${Math.round(waitMs / 1000)}s`);
-      await sleep(waitMs);
-      continue;
-    }
-
-    const minGapMs = (60 * 60 * 1000) / postsPerHour;
+    const postsPerDay = cfg.postsPerDay || 5;
+    const minGapMs = (24 * 60 * 60 * 1000) / postsPerDay;
     const elapsed = timeSinceLastPost();
+    
     if (elapsed < minGapMs) {
       const remainder = minGapMs - elapsed;
       const waitMs = remainder + Math.floor(Math.random() * 60_000); // Remainder + jitter up to 1 min
