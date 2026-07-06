@@ -6,7 +6,7 @@ import { fetchListTweets, postTweet, uploadImageFromUrl } from '../lib/twitter-h
 import { detectLanguage } from '../lib/language.mjs';
 import { generatePost } from '../lib/ai-commenter.mjs';
 import { alreadyCommented, markPosted, alreadyPosted } from '../lib/store.mjs';
-import { waitForSlot, postSleep } from '../lib/rate-limiter.mjs';
+import { waitForPostSlot, postSleep } from '../lib/rate-limiter.mjs';
 import { sendAlert } from '../lib/telegram.mjs';
 
 export async function runAutoPostMode(cfg, log) {
@@ -48,7 +48,7 @@ export async function runAutoPostMode(cfg, log) {
   });
 
   for (const t of pool) {
-    await waitForSlot(cfg, log);
+    await waitForPostSlot(cfg, log);
     const langSetting = cfg.modeD?.language || 'auto';
     const lang = langSetting === 'auto' ? detectLanguage(t.fullText) : langSetting;
 
