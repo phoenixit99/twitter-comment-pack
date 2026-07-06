@@ -10,10 +10,13 @@ import { waitForPostSlot, postSleep } from '../lib/rate-limiter.mjs';
 import { sendAlert } from '../lib/telegram.mjs';
 
 export async function runAutoPostMode(cfg, log) {
+  const isReady = await waitForPostSlot(cfg, log);
+  if (!isReady) return false;
+
   const listIds = cfg.modeD?.listIds || [];
   if (listIds.length === 0) {
     log('[mode-D] no list IDs configured; skipping');
-    return;
+    return false;
   }
 
   const pool = [];
@@ -48,7 +51,6 @@ export async function runAutoPostMode(cfg, log) {
   });
 
   for (const t of pool) {
-    await waitForPostSlot(cfg, log);
     const langSetting = cfg.modeD?.language || 'auto';
     const lang = langSetting === 'auto' ? detectLanguage(t.fullText) : langSetting;
 
@@ -82,15 +84,16 @@ export async function runAutoPostMode(cfg, log) {
       await postTweet(postContent, cfg.cookiesFile, { mediaIds });
       markPosted(t.id, t.author);
       log(`[mode-D] OK auto-post inspired by ${t.id} @${t.author} lang=${lang} "${postContent.slice(0, 60)}..."`);
-      break; // Only one post per cycle
+      return true; // Only one post per cycle
     } catch (e) {
       log(`[mode-D] post fail for inspiration ${t.id}: ${e.message}`);
       if (/RATE_LIMITED/.test(e.message)) {
         await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId, `[twitter-comment-pack] Rate limited (${e.message})`);
-        return;
+        return false;
       }
       continue;
     }
     await postSleep(cfg, log);
   }
+  return false;
 }
