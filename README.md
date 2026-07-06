@@ -25,7 +25,7 @@ npm run setup
 Wizard sẽ hỏi 4 câu hỏi chính (+ AI provider + API key):
 1. **Cookies Twitter** — paste JSON từ extension Cookie-Editor (xem `guides/01-get-cookies.md`)
 2. **Telegram bot token + chat ID** — xem `guides/02-get-telegram-token.md`
-3. **Chế độ** A / B / C — xem `guides/03-modes-explained.md`
+3. **Chế độ** A / B / C / D / E — xem `guides/03-modes-explained.md`
 4. **Số comment mỗi giờ** — mặc định 15. Xem `guides/04-rate-limits.md`
 
 Sau khi setup xong:
@@ -36,10 +36,12 @@ npm start              # chạy ngay
 
 Logs: `data/run.log`. Xem real-time: `Get-Content data/run.log -Wait` (PowerShell)
 
-### 3 chế độ tóm tắt
+### 5 chế độ tóm tắt
 - **A — List comment**: bot crawl các list bạn chọn, comment vào từng tweet bằng AI theo ngôn ngữ + phong cách bạn cấu hình.
 - **B — Amplify**: khi bạn đăng tweet mới, bot tìm các tweet hashtag liên quan và comment kèm link đến tweet của bạn.
 - **C — Hybrid**: luân phiên A và B.
+- **D — Auto Post**: bot crawl list, tìm tweet nổi bật và dùng nó làm cảm hứng để tự động viết một post mới.
+- **E — Hybrid A & D**: luân phiên chạy A và D.
 
 ### Quan trọng
 - KHÔNG commit `data/config.json` lên git — đã được gitignore sẵn.
@@ -75,10 +77,12 @@ The wizard asks 4 main questions + AI key. Guides for each are in `guides/`.
 
 Start: `npm start`. Logs: `data/run.log`.
 
-### 3 modes
+### 5 modes
 - **A — List comment**: crawl chosen lists, AI-comment per language and persona.
 - **B — Amplify**: when you post, bot comments under hashtag-matching tweets pointing back to yours.
 - **C — Hybrid**: alternates A/B.
+- **D — Auto Post**: crawl chosen lists, find top tweets and use them as inspiration to write completely new posts.
+- **E — Hybrid A & D**: alternates A/D.
 
 ### Notes
 - `data/config.json` is gitignored — never commit secrets.

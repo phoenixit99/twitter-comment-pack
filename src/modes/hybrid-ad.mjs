@@ -13,7 +13,13 @@ export async function runHybridADMode(cfg, log) {
     setMeta('hybrid_ad_last', 'A');
   } else {
     log('[mode-E] running D');
-    await runAutoPostMode(cfg, log);
-    setMeta('hybrid_ad_last', 'D');
+    const didRunD = await runAutoPostMode(cfg, log);
+    if (didRunD === false) {
+      log('[mode-E] D skipped (rate limit). Running A instead.');
+      await runListMode(cfg, log);
+      setMeta('hybrid_ad_last', 'A');
+    } else {
+      setMeta('hybrid_ad_last', 'D');
+    }
   }
 }
