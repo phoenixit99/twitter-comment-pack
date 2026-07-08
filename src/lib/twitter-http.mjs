@@ -205,6 +205,9 @@ function parseTweetEntry(entry) {
     .map(m => m.media_url_https || m.media_url)
     .filter(Boolean);
 
+  const urls = legacy.entities?.urls || [];
+  const urlStrings = urls.map((u) => u.expanded_url || u.url).filter(Boolean);
+
   return {
     id: tweet.rest_id || tweet.tweet?.rest_id || legacy.id_str,
     fullText: legacy.full_text || '',
@@ -216,6 +219,7 @@ function parseTweetEntry(entry) {
     favoriteCount: legacy.favorite_count || 0,
     retweetCount: legacy.retweet_count || 0,
     mediaUrls,
+    urls: urlStrings,
   };
 }
 

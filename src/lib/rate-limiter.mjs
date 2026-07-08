@@ -18,6 +18,11 @@ export async function waitForPostSlot(cfg, log) {
   const minGapMs = (24 * 60 * 60 * 1000) / postsPerDay;
   const elapsed = timeSinceLastPost();
   
+  if (elapsed === Infinity) {
+    log(`[rate] post history is empty (fresh start or database reset). Posting allowed immediately.`);
+    return true;
+  }
+  
   if (elapsed < minGapMs) {
     const remainder = minGapMs - elapsed;
     log(`[rate] post gap enforcement. Required gap ${Math.round(minGapMs / 60000)}m. Wait ${Math.round(remainder / 60000)}m more.`);
