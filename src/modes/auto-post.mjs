@@ -29,6 +29,12 @@ export async function runAutoPostMode(cfg, log) {
         if (t.isRetweet) continue;
         if (seen.has(t.id)) continue;
         if (alreadyCommented(t.id) || alreadyPosted(t.id)) continue;
+
+        // Skip tweets that do not have any media or URL attachments
+        const hasMedia = t.mediaUrls && t.mediaUrls.length > 0;
+        const hasUrls = t.urls && t.urls.length > 0;
+        if (!hasMedia && !hasUrls) continue;
+
         seen.add(t.id);
         pool.push(t);
       }

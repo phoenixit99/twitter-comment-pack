@@ -28,11 +28,84 @@ function log(msg) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+async function handleFatalError(e, cfg) {
+  if (/SESSION_EXPIRED|401|403/.test(e.message)) {
+    await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId,
+      `[twitter-comment-pack] STOPPED: ${e.message}`);
+    process.exit(1);
+  }
+}
+
+async function runCommentLoop(cfg) {
+  const commentsPerHour = cfg.commentsPerHour || 15;
+  const targetIntervalMs = (60 * 60 * 1000) / commentsPerHour;
+  log(`Starting Comment Loop. Target rate: ${commentsPerHour}/hr (~${Math.round(targetIntervalMs / 60000)}m interval)`);
+
+  while (true) {
+    try {
+      await runListMode(cfg, log);
+    } catch (e) {
+      log(`Comment loop error: ${e.message}`);
+      await handleFatalError(e, cfg);
+    }
+    const cycleSleep = targetIntervalMs * (0.8 + Math.random() * 0.4);
+    const clampedSleep = Math.max(30_000, Math.min(15 * 60_000, cycleSleep));
+    log(`Comment cycle done. Sleeping ${Math.round(clampedSleep / 1000)}s.`);
+    await sleep(clampedSleep);
+  }
+}
+
+async function runPostLoop(cfg) {
+  // Check lists for posts every 15 minutes
+  const checkIntervalMs = 15 * 60 * 1000;
+  log(`Starting Post Loop. Active checking interval: 15m`);
+
+  while (true) {
+    try {
+      await runAutoPostMode(cfg, log);
+    } catch (e) {
+      log(`Post loop error: ${e.message}`);
+      await handleFatalError(e, cfg);
+    }
+    const cycleSleep = checkIntervalMs * (0.9 + Math.random() * 0.2);
+    log(`Post cycle done. Sleeping ${Math.round(cycleSleep / 60000)} min.`);
+    await sleep(cycleSleep);
+  }
+}
+
+async function runAmplifyLoop(cfg) {
+  while (true) {
+    try {
+      await runAmplifyMode(cfg, log);
+    } catch (e) {
+      log(`Amplify loop error: ${e.message}`);
+      await handleFatalError(e, cfg);
+    }
+    const cycleSleep = 5 * 60 * 1000 + Math.floor(Math.random() * 5 * 60 * 1000);
+    log(`Amplify cycle done. Sleeping ${Math.round(cycleSleep / 60000)} min.`);
+    await sleep(cycleSleep);
+  }
+}
+
+async function runHybridLoop(cfg) {
+  while (true) {
+    try {
+      await runHybridMode(cfg, log);
+    } catch (e) {
+      log(`Hybrid loop error: ${e.message}`);
+      await handleFatalError(e, cfg);
+    }
+    const cycleSleep = 5 * 60 * 1000 + Math.floor(Math.random() * 5 * 60 * 1000);
+    log(`Hybrid cycle done. Sleeping ${Math.round(cycleSleep / 60000)} min.`);
+    await sleep(cycleSleep);
+  }
+}
+
 async function main() {
   log('Twitter Comment Pack starting...');
   const cfg = loadConfig();
   initStore('data/store.db');
-  log(`Mode: ${cfg.mode} | AI: ${cfg.ai.provider} | Rate: ${cfg.commentsPerHour}/hr`);
+  log(`Mode: ${cfg.mode} | AI: ${cfg.ai.provider} | Rate: ${cfg.commentsPerHour}/hr | Posts: ${cfg.postsPerDay}/day`);
 
   await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId,
     `[twitter-comment-pack] started in mode ${cfg.mode}`);
@@ -44,26 +117,21 @@ async function main() {
   runHealth();
   setInterval(runHealth, 2 * 60 * 60 * 1000);
 
-  // Main mode loop
-  while (true) {
-    try {
-      if (cfg.mode === 'A') await runListMode(cfg, log);
-      else if (cfg.mode === 'B') await runAmplifyMode(cfg, log);
-      else if (cfg.mode === 'C') await runHybridMode(cfg, log);
-      else if (cfg.mode === 'D') await runAutoPostMode(cfg, log);
-      else if (cfg.mode === 'E') await runHybridADMode(cfg, log);
-    } catch (e) {
-      log(`Loop error: ${e.message}`);
-      if (/SESSION_EXPIRED|401|403/.test(e.message)) {
-        await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId,
-          `[twitter-comment-pack] STOPPED: ${e.message}`);
-        process.exit(1);
-      }
-    }
-    // Sleep between full cycles
-    const cycleSleep = 5 * 60 * 1000 + Math.floor(Math.random() * 5 * 60 * 1000);
-    log(`Cycle done. Sleeping ${Math.round(cycleSleep / 60000)} min before next cycle.`);
-    await sleep(cycleSleep);
+  // Main mode loop selector
+  if (cfg.mode === 'A') {
+    await runCommentLoop(cfg);
+  } else if (cfg.mode === 'B') {
+    await runAmplifyLoop(cfg);
+  } else if (cfg.mode === 'C') {
+    await runHybridLoop(cfg);
+  } else if (cfg.mode === 'D') {
+    await runPostLoop(cfg);
+  } else if (cfg.mode === 'E') {
+    log('[mode-E] Running A and D loops concurrently in parallel');
+    await Promise.all([
+      runCommentLoop(cfg),
+      runPostLoop(cfg)
+    ]);
   }
 }
 
