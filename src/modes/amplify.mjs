@@ -74,6 +74,7 @@ export async function runAmplifyMode(cfg, log) {
   }
 
   // 2. For each hashtag, find candidates and reply
+  const skip = new Set((cfg.skipUsers || []).map(u => u.toLowerCase()));
   for (const tag of hashtags) {
     let cursor = null;
     for (let page = 0; page < 2; page++) {
@@ -93,6 +94,7 @@ export async function runAmplifyMode(cfg, log) {
       for (const t of result.tweets) {
         if (t.isRetweet) continue;
         if (t.author?.toLowerCase() === owner.toLowerCase()) continue;
+        if (t.author && skip.has(t.author.toLowerCase())) continue;
         const age = Date.now() - new Date(t.createdAt).getTime();
         if (age > MAX_AGE_MS) continue;
         if (alreadyCommented(t.id)) continue;
