@@ -17,7 +17,7 @@ import { detectLanguage } from './lib/language.mjs';
 import { generateComment } from './lib/ai-commenter.mjs';
 import { warmupSeen, warmupMark } from './lib/store.mjs';
 
-const REF = 'leninugreal';
+const REF = '';
 const LOG_PATH = 'data/warmup.log';
 
 function logLine(msg) {

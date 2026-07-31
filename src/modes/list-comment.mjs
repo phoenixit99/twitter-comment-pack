@@ -18,12 +18,14 @@ export async function runListMode(cfg, log) {
 
   const pool = [];
   const seen = new Set();
+  const skip = new Set((cfg.skipUsers || []).map(u => u.toLowerCase()));
   for (const id of listIds) {
     try {
       const tweets = await fetchListTweets(String(id).trim(), cfg.cookiesFile, 30);
       for (const t of tweets) {
         if (!t.id || !t.fullText || t.fullText.length < 10) continue;
         if (t.isRetweet) continue;
+        if (t.author && skip.has(t.author.toLowerCase())) continue;
         if (seen.has(t.id)) continue;
         if (alreadyCommented(t.id)) continue;
         seen.add(t.id);
