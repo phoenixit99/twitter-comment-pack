@@ -1,6 +1,6 @@
-import { postTweet } from '../lib/twitter-http.mjs';
+import { postTweet, fetchListTweets } from '../lib/twitter-http.mjs';
 import { generateCryptoOriginal } from '../lib/ai-commenter.mjs';
-import { getPostScheduleSlot, msUntilNextSlot, postSleep } from '../lib/rate-limiter.mjs';
+import { getPostScheduleSlot, msUntilNextSlot } from '../lib/rate-limiter.mjs';
 import { sendAlert } from '../lib/telegram.mjs';
 import { checkDraft } from '../lib/quality-gate.mjs';
 import { getRecentOpenings, addPost, hasPostedInSlot } from '../lib/post-history.mjs';
@@ -11,15 +11,14 @@ export async function runAutonomousPostMode(cfg, log) {
   if (!slotName) {
     const msWait = msUntilNextSlot(cfg);
     log(`[mode-E] Outside posting slots. Next check in ~${Math.round(msWait / 60000)}m`);
-    return msWait; // Return how long to sleep
+    return msWait;
   }
 
   // 2. Check if already posted for this slot today
   const todayDate = new Date().toISOString().split('T')[0];
   if (hasPostedInSlot(slotName, todayDate)) {
     log(`[mode-E] Already posted for slot "${slotName}" today. Waiting for next slot.`);
-    const msWait = msUntilNextSlot(cfg);
-    return msWait;
+    return msUntilNextSlot(cfg);
   }
 
   const maxRetries = cfg.modeE?.maxRetries || 3;
@@ -29,12 +28,42 @@ export async function runAutonomousPostMode(cfg, log) {
     attempt++;
     log(`[mode-E] Slot "${slotName}" active. Generating post (Attempt ${attempt}/${maxRetries})...`);
 
-    // 3. Choose Topic
-    const topics = cfg.modeE?.topics || ['BTC', 'ETH', 'SOL', 'crypto market'];
-    const topic = topics[Math.floor(Math.random() * topics.length)];
+    // 3. Fetch Hot Tweets from Lists for Research Context
+    const listIds = cfg.modeE?.listIds || cfg.modeA?.listIds || [];
+    if (listIds.length === 0) {
+      log('[mode-E] No list IDs configured for fetching context. Skipping.');
+      return 15 * 60000;
+    }
+
+    let pool = [];
+    for (const id of listIds) {
+      try {
+        const tweets = await fetchListTweets(String(id).trim(), cfg.cookiesFile, 15);
+        for (const t of tweets) {
+          if (!t.id || !t.fullText || t.fullText.length < 20) continue;
+          if (t.isRetweet) continue;
+          pool.push(t);
+        }
+      } catch (e) {
+        log(`[mode-E] list ${id} fetch failed: ${e.message}`);
+      }
+    }
+
+    if (pool.length === 0) {
+      log('[mode-E] Could not fetch any tweets for context. Retrying later.');
+      return 15 * 60000;
+    }
+
+    // Sort by favoriteCount descending (highest engagement first)
+    pool.sort((a, b) => (b.favoriteCount || 0) - (a.favoriteCount || 0));
     
-    // Optional: Search Tavily if key is provided (skipping for brevity, can be re-added)
-    const researchContext = `Recent updates on ${topic}.`;
+    // Pick one of the top 5 hot tweets randomly to ensure variety
+    const topTweets = pool.slice(0, 5);
+    const selectedTweet = topTweets[Math.floor(Math.random() * topTweets.length)];
+    
+    log(`[mode-E] Selected context from @${selectedTweet.author}: "${selectedTweet.fullText.slice(0, 40)}..."`);
+    const researchContext = `TIN TỨC GẦN ĐÂY TỪ TÀI KHOẢN @${selectedTweet.author}:\n${selectedTweet.fullText}`;
+    const topic = "thị trường crypto / tin tức mới"; 
 
     // 4. Generate Draft (2-pass)
     const recentOpenings = getRecentOpenings(5);
@@ -59,10 +88,7 @@ export async function runAutonomousPostMode(cfg, log) {
     if (!checkResult.pass) {
       log(`[mode-E] Quality check failed: ${checkResult.reasons.join(', ')}`);
       log(`[mode-E] Rejected content: ${postContent.replace(/\n/g, ' ')}`);
-      if (attempt >= maxRetries) {
-        log(`[mode-E] Max retries reached. Skipping slot.`);
-        return 15 * 60000;
-      }
+      if (attempt >= maxRetries) return 15 * 60000;
       continue;
     }
 
@@ -82,7 +108,6 @@ export async function runAutonomousPostMode(cfg, log) {
       // 8. Telegram alert
       await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId, `🪙 Bài gốc đã đăng [${slotName}]:\n\n${postContent}`);
       
-      // We successfully posted, return a value indicating we should trigger a comment pause
       return 'POSTED';
       
     } catch (e) {
@@ -91,7 +116,6 @@ export async function runAutonomousPostMode(cfg, log) {
         await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId, `[twitter-comment-pack] Rate limited (${e.message})`);
         return 60 * 60000; // Sleep an hour
       }
-      // If other failure, maybe retry
       if (attempt >= maxRetries) return 15 * 60000;
     }
   }
