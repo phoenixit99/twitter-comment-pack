@@ -44,6 +44,7 @@ export async function runAutonomousPostMode(cfg, log) {
       postContent = await generateCryptoOriginal({
         postType: slotName,
         topic,
+        researchContext,
         recentOpenings,
         ai: cfg.ai
       });
