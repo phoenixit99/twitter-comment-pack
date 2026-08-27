@@ -37,3 +37,73 @@ export async function postSleep(cfg, log) {
   log(`[rate] post-sleep ${Math.round(ms / 1000)}s`);
   await sleep(ms);
 }
+
+/**
+ * Check if current time (GMT+7) is within a defined posting slot.
+ * @param {Object} cfg 
+ * @returns {string|null} Slot name (e.g. "morning_breakdown") or null if outside slots
+ */
+export function getPostScheduleSlot(cfg) {
+  if (!cfg.modeE?.schedule?.slots) return null;
+  
+  // Convert current UTC time to GMT+7
+  const now = new Date();
+  const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const gmt7Ms = utcMs + (7 * 60 * 60000); // +7 hours
+  const gmt7Date = new Date(gmt7Ms);
+  
+  const currentHour = gmt7Date.getHours();
+  const currentMinute = gmt7Date.getMinutes();
+  const currentDecimalHour = currentHour + (currentMinute / 60);
+
+  for (const slot of cfg.modeE.schedule.slots) {
+    const [startH, startM] = slot.start.split(':').map(Number);
+    const [endH, endM] = slot.end.split(':').map(Number);
+    
+    const startDecimal = startH + (startM / 60);
+    const endDecimal = endH + (endM / 60);
+    
+    if (currentDecimalHour >= startDecimal && currentDecimalHour <= endDecimal) {
+      return slot.name;
+    }
+  }
+  return null;
+}
+
+/**
+ * Calculates roughly how many minutes until the next scheduled slot.
+ * Used for sleeping the loop when outside all slots.
+ */
+export function msUntilNextSlot(cfg) {
+  if (!cfg.modeE?.schedule?.slots || cfg.modeE.schedule.slots.length === 0) {
+    return 15 * 60 * 1000; // default 15m
+  }
+  
+  const now = new Date();
+  const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const gmt7Ms = utcMs + (7 * 60 * 60000);
+  const gmt7Date = new Date(gmt7Ms);
+  
+  const currentHour = gmt7Date.getHours();
+  const currentMinute = gmt7Date.getMinutes();
+  const currentDecimalHour = currentHour + (currentMinute / 60);
+  
+  let minWaitHours = 24;
+  
+  for (const slot of cfg.modeE.schedule.slots) {
+    const [startH, startM] = slot.start.split(':').map(Number);
+    const startDecimal = startH + (startM / 60);
+    
+    let diff = startDecimal - currentDecimalHour;
+    if (diff <= 0) diff += 24; // next day
+    
+    if (diff < minWaitHours) {
+      minWaitHours = diff;
+    }
+  }
+  
+  // Convert hours to ms, cap at max sleep of 15 mins so we check periodically anyway
+  const msWait = Math.floor(minWaitHours * 60 * 60 * 1000);
+  return Math.min(msWait, 15 * 60 * 1000);
+}
+
