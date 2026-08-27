@@ -55,6 +55,7 @@ export async function runListMode(cfg, log) {
         lang,
         style: cfg.modeA?.stylePrompt || '',
         ai: cfg.ai,
+        isModeE: cfg.mode === 'E'
       });
     } catch (e) {
       log(`[mode-A] AI fail for ${t.id}: ${e.message}`);

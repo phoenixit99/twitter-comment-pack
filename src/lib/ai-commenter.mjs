@@ -101,11 +101,23 @@ async function callAnthropic({ apiKey, model, prompt }) {
   return (block?.text || '').trim();
 }
 
-export async function generateComment({ tweetText, lang, style, ai }) {
+export async function generateComment({ tweetText, lang, style, ai, isModeE }) {
   if (isFollowBackRequest(tweetText)) {
     return followBackReply(lang);
   }
-  const prompt = buildPrompt({ tweetText, lang, style });
+  
+  let prompt = '';
+  if (isModeE) {
+    try {
+      const sysPrompt = fs.readFileSync(path.resolve('prompts/comment_support.txt'), 'utf-8');
+      prompt = sysPrompt.replace('{{TWEET_TEXT}}', tweetText.slice(0, 500));
+    } catch (e) {
+      prompt = buildPrompt({ tweetText, lang, style });
+    }
+  } else {
+    prompt = buildPrompt({ tweetText, lang, style });
+  }
+
   const provider = (ai.provider || 'deepseek').toLowerCase();
   let text = '';
   if (provider === 'deepseek') text = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt });
@@ -170,7 +182,7 @@ export async function generateAgenticPost({ topic, researchContext, lang, style,
  * Pass 1: Generate original draft using post_original.txt
  * Pass 2: Rewrite draft using rewrite_human.txt to remove AI tone
  */
-export async function generateCryptoOriginal({ postType, topic, recentOpenings, ai }) {
+export async function generateCryptoOriginal({ postType, topic, researchContext, recentOpenings, ai }) {
   // Pass 1: Generate
   let sysPrompt = '';
   try {
@@ -182,6 +194,7 @@ export async function generateCryptoOriginal({ postType, topic, recentOpenings, 
   const prompt1 = sysPrompt
     .replace('{{POST_TYPE}}', postType || 'midday_news')
     .replace('{{TOPIC}}', topic || '')
+    .replace('{{RESEARCH_CONTEXT}}', researchContext || '')
     .replace('{{RECENT_OPENINGS}}', recentOpenings && recentOpenings.length > 0 ? recentOpenings.map(o => `- ${o}`).join('\n') : 'Chưa có bài nào gần đây.');
 
   const provider = (ai.provider || 'deepseek').toLowerCase();
