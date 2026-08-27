@@ -2,6 +2,8 @@
  * Multi-provider AI comment generator.
  * Supports: deepseek, openai, anthropic. All via fetch — no SDK deps.
  */
+import fs from 'fs';
+import path from 'path';
 import { isFollowBackRequest, followBackReply } from './language.mjs';
 
 const LANG_INSTRUCTION = {
@@ -127,4 +129,92 @@ export async function generatePost({ tweetText, lang, style, ai }) {
 
   if (!text) throw new Error('AI returned empty post');
   return text.replace(/^["'`]+|["'`]+$/g, '').trim();
+}
+
+function buildAgenticPostPrompt({ topic, researchContext, lang, style }) {
+  const styleLine = style && style.trim()
+    ? `Style/persona: ${style.trim()}`
+    : 'Style: human, natural — not robotic.';
+  return `You are a creative content creator on Twitter. Write a NEW, standalone post about the topic: "${topic}".
+Use the following recent research/news as context to make your post insightful and accurate:
+---
+${researchContext}
+---
+
+Your post must be:
+- 1-3 sentences max (under 280 characters)
+- Engaging and interesting
+- Human and natural, NOT robotic or AI-sounding
+- No hashtags, no URLs, minimal emoji
+- ${LANG_INSTRUCTION[lang] || LANG_INSTRUCTION.en}
+- ${styleLine}
+
+Reply with ONLY the new post text. Nothing else.`;
+}
+
+export async function generateAgenticPost({ topic, researchContext, lang, style, ai }) {
+  const prompt = buildAgenticPostPrompt({ topic, researchContext, lang, style });
+  const provider = (ai.provider || 'deepseek').toLowerCase();
+  let text = '';
+  if (provider === 'deepseek') text = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt });
+  else if (provider === 'openai') text = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt });
+  else if (provider === 'anthropic') text = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt });
+  else throw new Error(`Unknown AI provider: ${provider}`);
+
+  if (!text) throw new Error('AI returned empty post');
+  return text.replace(/^["'`]+|["'`]+$/g, '').trim();
+}
+
+/**
+ * 2-pass generation for Crypto VN posts.
+ * Pass 1: Generate original draft using post_original.txt
+ * Pass 2: Rewrite draft using rewrite_human.txt to remove AI tone
+ */
+export async function generateCryptoOriginal({ postType, topic, recentOpenings, ai }) {
+  // Pass 1: Generate
+  let sysPrompt = '';
+  try {
+    sysPrompt = fs.readFileSync(path.resolve('prompts/post_original.txt'), 'utf-8');
+  } catch (e) {
+    throw new Error('Missing prompts/post_original.txt');
+  }
+
+  const prompt1 = sysPrompt
+    .replace('{{POST_TYPE}}', postType || 'midday_news')
+    .replace('{{TOPIC}}', topic || '')
+    .replace('{{RECENT_OPENINGS}}', recentOpenings && recentOpenings.length > 0 ? recentOpenings.map(o => `- ${o}`).join('\n') : 'Chưa có bài nào gần đây.');
+
+  const provider = (ai.provider || 'deepseek').toLowerCase();
+  let draft = '';
+  if (provider === 'deepseek') draft = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+  else if (provider === 'openai') draft = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+  else if (provider === 'anthropic') draft = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+  else throw new Error(`Unknown AI provider: ${provider}`);
+  
+  if (!draft) throw new Error('AI returned empty draft');
+
+  // Pass 2: Rewrite to humanize
+  return await rewriteHuman({ draft, ai });
+}
+
+async function rewriteHuman({ draft, ai }) {
+  let sysPrompt = '';
+  try {
+    sysPrompt = fs.readFileSync(path.resolve('prompts/rewrite_human.txt'), 'utf-8');
+  } catch (e) {
+    throw new Error('Missing prompts/rewrite_human.txt');
+  }
+
+  const prompt2 = sysPrompt.replace('{{DRAFT_CONTENT}}', draft);
+  const provider = (ai.provider || 'deepseek').toLowerCase();
+  
+  let finalPost = '';
+  if (provider === 'deepseek') finalPost = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt: prompt2 });
+  else if (provider === 'openai') finalPost = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt: prompt2 });
+  else if (provider === 'anthropic') finalPost = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt: prompt2 });
+  else throw new Error(`Unknown AI provider: ${provider}`);
+
+  if (!finalPost) return draft.replace(/^["'`]+|["'`]+$/g, '').trim(); // Fallback to draft if rewrite fails
+  
+  return finalPost.replace(/^["'`]+|["'`]+$/g, '').trim();
 }

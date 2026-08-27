@@ -11,6 +11,7 @@ import { runAmplifyMode } from './modes/amplify.mjs';
 import { runHybridMode } from './modes/hybrid.mjs';
 import { runHybridADMode } from './modes/hybrid-ad.mjs';
 import { runAutoPostMode } from './modes/auto-post.mjs';
+import { runAutonomousPostMode } from './modes/autonomous-post.mjs';
 import { runWarmup } from './warmup.mjs';
 
 const DEBUG = process.argv.includes('--debug');
@@ -127,12 +128,71 @@ async function main() {
   } else if (cfg.mode === 'D') {
     await runPostLoop(cfg);
   } else if (cfg.mode === 'E') {
-    log('[mode-E] Running A and D loops concurrently in parallel');
-    await Promise.all([
-      runCommentLoop(cfg),
-      runPostLoop(cfg)
-    ]);
+    await runAutonomousLoop(cfg);
   }
+}
+
+async function runAutonomousLoop(cfg) {
+  log(`Starting Mode E (Dual Loop: Autonomous Post + List Comment)`);
+
+  // Shared state to pause comments for 20 mins after a post
+  let commentPauseUntil = 0;
+
+  // LOOP 1: Autonomous Posting
+  const postLoop = async () => {
+    while (true) {
+      try {
+        const result = await runAutonomousPostMode(cfg, log);
+        
+        if (result === 'POSTED') {
+          // Pause comments for 20 minutes (1200000 ms)
+          commentPauseUntil = Date.now() + 20 * 60 * 1000;
+          log(`[mode-E] Post successful. Pausing comments until ${new Date(commentPauseUntil).toLocaleTimeString()}`);
+          await sleep(15 * 60 * 1000); // Wait at least 15m before trying next post logic
+        } else if (typeof result === 'number') {
+          // result is ms to sleep
+          await sleep(result);
+        } else {
+          // Fallback sleep
+          await sleep(15 * 60 * 1000);
+        }
+      } catch (e) {
+        log(`[mode-E] Post loop error: ${e.message}`);
+        await handleFatalError(e, cfg);
+        await sleep(5 * 60 * 1000); // Sleep 5m on error
+      }
+    }
+  };
+
+  // LOOP 2: Commenting (same as Mode A)
+  const commentLoop = async () => {
+    const commentsPerHour = cfg.commentsPerHour || 15;
+    const targetIntervalMs = (60 * 60 * 1000) / commentsPerHour;
+    
+    while (true) {
+      if (Date.now() < commentPauseUntil) {
+        const waitMs = commentPauseUntil - Date.now();
+        log(`[mode-E] Comments paused due to recent post. Waiting ${Math.round(waitMs / 60000)}m...`);
+        await sleep(waitMs);
+        continue;
+      }
+
+      try {
+        await runListMode(cfg, log);
+      } catch (e) {
+        log(`[mode-E] Comment loop error: ${e.message}`);
+        await handleFatalError(e, cfg);
+      }
+      
+      const cycleSleep = targetIntervalMs * (0.8 + Math.random() * 0.4);
+      const clampedSleep = Math.max(30_000, Math.min(15 * 60_000, cycleSleep));
+      log(`[mode-E] Comment cycle done. Sleeping ${Math.round(clampedSleep / 1000)}s.`);
+      await sleep(clampedSleep);
+    }
+  };
+
+  // Run both loops concurrently
+  await Promise.all([postLoop(), commentLoop()]);
 }
 
 main().catch(async (e) => {
