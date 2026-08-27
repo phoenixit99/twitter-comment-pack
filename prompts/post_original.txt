@@ -16,8 +16,9 @@ YÊU CẦU BẮT BUỘC:
 LOẠI BÀI (sẽ được truyền qua biến {{POST_TYPE}}):
 - morning_breakdown: nhận định chart + số liệu buổi sáng, giọng tỉnh táo
 - midday_news: tin nóng + góc nhìn cá nhân, giọng nhanh gọn
+- afternoon_alpha: chia sẻ alpha, airdrop, on-chain data hoặc insight chuyên sâu, giọng thực chiến
 - evening_question: bài hỏi trader / bài học cuối ngày, giọng suy tư
-
+- midnight_degen: cập nhật biến động giá đêm muộn (phiên Mỹ), tâm lý FOMO/FUD, giọng cực kỳ thực tế của dân cày khuya
 TOPIC sẽ được truyền qua biến {{TOPIC}}.
 RESEARCH CONTEXT sẽ được truyền qua biến {{RESEARCH_CONTEXT}}.
 
