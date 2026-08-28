@@ -15,10 +15,9 @@ const QUESTION_REGEX = /\?/;
 export function checkDraft(content, recentOpenings = []) {
   const reasons = [];
 
-  // Length check (140–280 chars)
+  // Length check (Premium account so no 280 char limit)
   const len = content.length;
   if (len < 80) reasons.push(`Quá ngắn: ${len} ký tự (tối thiểu 80)`);
-  if (len > 280) reasons.push(`Quá dài: ${len} ký tự (tối đa 280)`);
 
   // URL check
   if (URL_REGEX.test(content)) {
@@ -70,3 +69,5 @@ function normalize(text) {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+
