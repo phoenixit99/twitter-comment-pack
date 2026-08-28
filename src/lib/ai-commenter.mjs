@@ -177,13 +177,7 @@ export async function generateAgenticPost({ topic, researchContext, lang, style,
   return text.replace(/^["'`]+|["'`]+$/g, '').trim();
 }
 
-/**
- * 2-pass generation for Crypto VN posts.
- * Pass 1: Generate original draft using post_original.txt
- * Pass 2: Rewrite draft using rewrite_human.txt to remove AI tone
- */
 export async function generateCryptoOriginal({ postType, topic, researchContext, recentOpenings, ai }) {
-  // Pass 1: Generate
   let sysPrompt = '';
   try {
     sysPrompt = fs.readFileSync(path.resolve('prompts/post_original.txt'), 'utf-8');
@@ -198,36 +192,13 @@ export async function generateCryptoOriginal({ postType, topic, researchContext,
     .replace('{{RECENT_OPENINGS}}', recentOpenings && recentOpenings.length > 0 ? recentOpenings.map(o => `- ${o}`).join('\n') : 'Chưa có bài nào gần đây.');
 
   const provider = (ai.provider || 'deepseek').toLowerCase();
-  let draft = '';
-  if (provider === 'deepseek') draft = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
-  else if (provider === 'openai') draft = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
-  else if (provider === 'anthropic') draft = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+  let post = '';
+  if (provider === 'deepseek') post = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+  else if (provider === 'openai') post = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+  else if (provider === 'anthropic') post = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
   else throw new Error(`Unknown AI provider: ${provider}`);
   
-  if (!draft) throw new Error('AI returned empty draft');
+  if (!post) throw new Error('AI returned empty post');
 
-  // Pass 2: Rewrite to humanize
-  return await rewriteHuman({ draft, ai });
-}
-
-async function rewriteHuman({ draft, ai }) {
-  let sysPrompt = '';
-  try {
-    sysPrompt = fs.readFileSync(path.resolve('prompts/rewrite_human.txt'), 'utf-8');
-  } catch (e) {
-    throw new Error('Missing prompts/rewrite_human.txt');
-  }
-
-  const prompt2 = sysPrompt.replace('{{DRAFT_CONTENT}}', draft);
-  const provider = (ai.provider || 'deepseek').toLowerCase();
-  
-  let finalPost = '';
-  if (provider === 'deepseek') finalPost = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt: prompt2 });
-  else if (provider === 'openai') finalPost = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt: prompt2 });
-  else if (provider === 'anthropic') finalPost = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt: prompt2 });
-  else throw new Error(`Unknown AI provider: ${provider}`);
-
-  if (!finalPost) return draft.replace(/^["'`]+|["'`]+$/g, '').trim(); // Fallback to draft if rewrite fails
-  
-  return finalPost.replace(/^["'`]+|["'`]+$/g, '').trim();
+  return post.replace(/^["'`]+|["'`]+$/g, '').trim();
 }

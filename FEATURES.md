@@ -18,7 +18,7 @@ Nếu sau này muốn đổi cấu hình (vd thêm list mới, đổi rate, đ�
 
 ---
 
-## 2. Ba chế độ hoạt động
+## 2. Năm chế độ hoạt động
 
 ### Mode A — List Comment (an toàn nhất)
 
@@ -57,6 +57,15 @@ KHÔNG dùng cho spam tin tức, news repost, hay nội dung không có giá tr�
 ### Mode C — Hybrid
 
 Luân phiên A và B mỗi cycle. Tổng comment vẫn bị giới hạn bởi `commentsPerHour` — khuyến nghị tăng rate (20–25/hr) để cả 2 mode có chỗ chạy.
+
+### Mode D — Auto Post
+
+Bot tự động crawl các Twitter list được chỉ định để tìm ra các tweet nổi bật nhất (top tweets), và dùng chúng làm nguồn cảm hứng để viết các bài đăng (post) hoàn toàn mới cho tài khoản của bạn.
+
+### Mode E — Autonomous Post (Dual Loop)
+
+Bot tự động crawl các tweet hot nhất từ các list cấu hình (`listIds`), dùng nội dung đó làm bối cảnh (research context) để AI phân tích, tổng hợp và tự động viết một bài đăng hoàn toàn mới.
+Đặc biệt, Mode E chạy song song (dual loop) cả việc đăng bài mới và đi bình luận dạo (giống Mode A), tuy nhiên nó sẽ tự động tạm dừng comment trong 20 phút ngay sau khi vừa đăng bài mới để tránh hành vi bất thường.
 
 ---
 

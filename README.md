@@ -41,7 +41,7 @@ Logs: `data/run.log`. Xem real-time: `Get-Content data/run.log -Wait` (PowerShel
 - **B — Amplify**: khi bạn đăng tweet mới, bot tìm các tweet hashtag liên quan và comment kèm link đến tweet của bạn.
 - **C — Hybrid**: luân phiên A và B.
 - **D — Auto Post**: bot crawl list, tìm tweet nổi bật và dùng nó làm cảm hứng để tự động viết một post mới.
-- **E — Agentic Research Post**: bot tự động tìm kiếm tin tức về các chủ đề cấu hình sẵn qua Tavily, phân tích và đăng bài viết kèm hình ảnh từ web.
+- **E — Autonomous Post**: bot tự động crawl các tweet hot nhất từ list được cấu hình (`listIds`), dùng đó làm bối cảnh (context) để AI tự động viết một bài đăng hoàn toàn mới (chạy song song dual loop cùng với list comment).
 
 ### Quan trọng
 - KHÔNG commit `data/config.json` lên git — đã được gitignore sẵn.
@@ -82,7 +82,7 @@ Start: `npm start`. Logs: `data/run.log`.
 - **B — Amplify**: when you post, bot comments under hashtag-matching tweets pointing back to yours.
 - **C — Hybrid**: alternates A/B.
 - **D — Auto Post**: crawl chosen lists, find top tweets and use them as inspiration to write completely new posts.
-- **E — Agentic Research Post**: autonomously researches topics via Tavily, analyzes news, and posts a new tweet with an image from the web.
+- **E — Autonomous Post**: autonomously crawls the hottest tweets from your configured lists (`listIds`), uses them as context for the AI, and generates a completely new post (runs concurrently with list comment).
 
 ### Notes
 - `data/config.json` is gitignored — never commit secrets.
