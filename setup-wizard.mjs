@@ -100,78 +100,118 @@ function normalizeCookies(raw) {
   let tgChatId = '';
   if (tgToken) tgChatId = await ask('Telegram chat ID: ');
 
+  // Load existing config if available
+  let existingCfg = {};
+  if (fs.existsSync(CONFIG_PATH)) {
+    try {
+      existingCfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+    } catch {}
+  }
+
   // Q3: Mode
   console.log('\n--- Question 3/5: Mode ---');
   console.log('  A = List comment (you give list IDs, bot comments per language/style)');
   console.log('  B = Amplify (when you post, bot comments on hashtag tweets pointing back)');
   console.log('  C = Hybrid (alternate A and B)');
   console.log('  D = Auto Post (scan list, use top tweets as inspiration to auto post)');
-  console.log('  E = Hybrid A & D (alternate A and D)');
+  console.log('  E = Autonomous Post (Dual Loop: Autonomous Post + List Comment)');
   console.log('  See guides/03-modes-explained.md for full details.');
   let mode = '';
   while (!['A', 'B', 'C', 'D', 'E'].includes(mode)) {
-    mode = (await ask('Choose mode (A/B/C/D/E) [A]: ')).toUpperCase() || 'A';
+    mode = (await ask(`Choose mode (A/B/C/D/E) [${existingCfg.mode || 'A'}]: `)).toUpperCase() || existingCfg.mode || 'A';
   }
 
-  const modeA = { listIds: [], language: 'auto', stylePrompt: '' };
-  const modeB = { ownerUsername: '', hashtags: ['#XAUUSD', '#Gold', '#Crypto', '#Bitcoin'], crossPostListId: '' };
-  const modeD = { listIds: [], language: 'auto', stylePrompt: '' };
+  const modeA = existingCfg.modeA || { listIds: [], language: 'auto', stylePrompt: '' };
+  const modeB = existingCfg.modeB || { ownerUsername: '', hashtags: ['#XAUUSD', '#Gold', '#Crypto', '#Bitcoin'], crossPostListId: '' };
+  const modeD = existingCfg.modeD || { listIds: [], language: 'auto', stylePrompt: '' };
+  const modeE = existingCfg.modeE || {
+    listIds: [],
+    schedule: {
+      slots: [
+        { name: "morning_breakdown", start: "07:00", end: "09:00" },
+        { name: "midday_news", start: "11:30", end: "13:00" },
+        { name: "afternoon_alpha", start: "15:00", end: "17:00" },
+        { name: "evening_question", start: "20:00", end: "22:00" },
+        { name: "midnight_degen", start: "23:30", end: "23:59" },
+        { name: "midnight_degen", start: "00:00", end: "01:00" }
+      ]
+    },
+    topics: ["Bitcoin on-chain", "Ethereum Layer 2", "Solana DeFi", "Crypto thị trường vĩ mô"],
+    maxRetries: 3
+  };
 
   if (mode === 'A' || mode === 'C' || mode === 'E') {
-    const ids = await ask('  List IDs (comma-separated): ');
-    modeA.listIds = ids.split(',').map((s) => s.trim()).filter(Boolean);
-    const lang = await ask('  Language (auto|en|ja|ko|zh) [auto]: ') || 'auto';
+    const defaultIds = (modeA.listIds || []).join(',');
+    const ids = await ask(`  Mode A List IDs (comma-separated)${defaultIds ? ` [${defaultIds}]` : ''}: `);
+    if (ids) modeA.listIds = ids.split(',').map((s) => s.trim()).filter(Boolean);
+    const lang = await ask(`  Language (auto|en|ja|ko|zh) [${modeA.language || 'auto'}]: `) || modeA.language || 'auto';
     modeA.language = lang;
-    const style = await ask('  Style/persona prompt (free text, e.g. "trader chuyen nghiep, ngan gon duoi 200 ky tu"): ');
-    modeA.stylePrompt = style;
+    const style = await ask(`  Style/persona prompt${modeA.stylePrompt ? ` [${modeA.stylePrompt}]` : ' (free text)'}: `);
+    if (style) modeA.stylePrompt = style;
   }
   
-  if (mode === 'D' || mode === 'E') {
-    const ids = await ask('  Mode D / Auto Post - List IDs (comma-separated): ');
-    modeD.listIds = ids.split(',').map((s) => s.trim()).filter(Boolean);
-    const lang = await ask('  Language (auto|en|ja|ko|zh) [auto]: ') || 'auto';
+  if (mode === 'D') {
+    const defaultIds = (modeD.listIds || []).join(',');
+    const ids = await ask(`  Mode D List IDs (comma-separated)${defaultIds ? ` [${defaultIds}]` : ''}: `);
+    if (ids) modeD.listIds = ids.split(',').map((s) => s.trim()).filter(Boolean);
+    const lang = await ask(`  Language (auto|en|ja|ko|zh) [${modeD.language || 'auto'}]: `) || modeD.language || 'auto';
     modeD.language = lang;
-    const style = await ask('  Style/persona prompt (e.g. "nhan dinh rieng, giong dieu chuyen gia"): ');
-    modeD.stylePrompt = style;
+    const style = await ask(`  Style/persona prompt${modeD.stylePrompt ? ` [${modeD.stylePrompt}]` : ''}: `);
+    if (style) modeD.stylePrompt = style;
   }
+
+  if (mode === 'E') {
+    const defaultIds = (modeE.listIds && modeE.listIds.length > 0 ? modeE.listIds : modeA.listIds || []).join(',');
+    const ids = await ask(`  Mode E Auto-Post Context List IDs (comma-separated)${defaultIds ? ` [${defaultIds}]` : ''}: `);
+    if (ids) {
+      modeE.listIds = ids.split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (!modeE.listIds || modeE.listIds.length === 0) {
+      modeE.listIds = [...modeA.listIds];
+    }
+  }
+
   if (mode === 'B' || mode === 'C') {
-    modeB.ownerUsername = await ask('  Your Twitter @username (no @): ');
-    const tags = await ask('  Hashtags to scan (comma-separated) [#XAUUSD,#Gold,#Crypto,#Bitcoin]: ');
+    modeB.ownerUsername = await ask(`  Your Twitter @username [${modeB.ownerUsername || ''}]: `) || modeB.ownerUsername;
+    const defaultTags = (modeB.hashtags || []).join(',');
+    const tags = await ask(`  Hashtags to scan (comma-separated) [${defaultTags}]: `);
     if (tags) modeB.hashtags = tags.split(',').map((s) => s.trim()).filter(Boolean);
-    modeB.crossPostListId = await ask('  Optional cross-post list ID (Enter to skip): ');
+    modeB.crossPostListId = await ask(`  Optional cross-post list ID [${modeB.crossPostListId || 'skip'}]: `) || modeB.crossPostListId;
   }
 
   // Q4: rate
   console.log('\n--- Question 4/5: Rate ---');
   console.log('See guides/04-rate-limits.md. Safe: 10-20/hr. Aggressive: 20-30. >30 risky.');
-  const rateRaw = await ask('Comments per hour [15]: ');
-  const rate = parseInt(rateRaw, 10) || 15;
+  const rateRaw = await ask(`Comments per hour [${existingCfg.commentsPerHour || 15}]: `);
+  const rate = parseInt(rateRaw, 10) || existingCfg.commentsPerHour || 15;
   
-  let postsPerDay = 5;
+  let postsPerDay = existingCfg.postsPerDay || 5;
   if (mode === 'D' || mode === 'E') {
-    const postRateRaw = await ask('Auto-Posts per day [5]: ');
-    postsPerDay = parseInt(postRateRaw, 10) || 5;
+    const postRateRaw = await ask(`Auto-Posts per day [${postsPerDay}]: `);
+    postsPerDay = parseInt(postRateRaw, 10) || postsPerDay;
   }
 
   // Q5: AI
   console.log('\n--- Question 5/5: AI provider ---');
   console.log('Options: deepseek (cheap, default) | openai | anthropic');
-  let provider = (await ask('Provider [deepseek]: ')).toLowerCase() || 'deepseek';
+  const defaultProvider = existingCfg.ai?.provider || 'deepseek';
+  let provider = (await ask(`Provider [${defaultProvider}]: `)).toLowerCase() || defaultProvider;
   if (!['deepseek', 'openai', 'anthropic'].includes(provider)) provider = 'deepseek';
-  const apiKey = await ask(`${provider} API key: `);
-  const model = await ask(`Model override (Enter for default): `);
+  const apiKey = await ask(`${provider} API key${existingCfg.ai?.apiKey ? ' (press Enter to keep existing)' : ''}: `) || existingCfg.ai?.apiKey;
+  const model = await ask(`Model override [${existingCfg.ai?.model || 'default'}]: `) || existingCfg.ai?.model || '';
 
   const cfg = {
+    ...existingCfg,
     cookiesFile: 'data/cookies.json',
-    telegram: { botToken: tgToken, chatId: tgChatId },
+    telegram: { botToken: tgToken || existingCfg.telegram?.botToken || '', chatId: tgChatId || existingCfg.telegram?.chatId || '' },
     mode,
     modeA,
     modeB,
     modeD,
+    modeE,
     commentsPerHour: rate,
     postsPerDay,
-    delayMinMs: 60000,
-    delayMaxMs: 240000,
+    delayMinMs: existingCfg.delayMinMs || 60000,
+    delayMaxMs: existingCfg.delayMaxMs || 240000,
     ai: { provider, apiKey, model },
   };
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
