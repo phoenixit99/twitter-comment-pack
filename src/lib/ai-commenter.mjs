@@ -50,19 +50,28 @@ Reply with ONLY the new post text. Nothing else.`;
 }
 
 async function callDeepseek({ apiKey, model, prompt }) {
-  const res = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: model || 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 200,
-      temperature: 0.95,
-    }),
-  });
-  if (!res.ok) throw new Error(`DeepSeek HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const data = await res.json();
-  return (data?.choices?.[0]?.message?.content || '').trim();
+  try {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: model || 'deepseek-chat',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 200,
+        temperature: 0.95,
+      }),
+    });
+    if (!res.ok) {
+      // Log warning but don't throw to allow fallback or graceful degradation
+      console.warn(`DeepSeek warning: HTTP ${res.status} - ${(await res.text()).slice(0, 200)}`);
+      return '';
+    }
+    const data = await res.json();
+    return (data?.choices?.[0]?.message?.content || '').trim();
+  } catch (e) {
+    console.warn('DeepSeek request failed:', e.message);
+    return '';
+  }
 }
 
 async function callOpenAI({ apiKey, model, prompt }) {
@@ -120,10 +129,24 @@ export async function generateComment({ tweetText, lang, style, ai, isModeE }) {
 
   const provider = (ai.provider || 'deepseek').toLowerCase();
   let text = '';
-  if (provider === 'deepseek') text = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt });
-  else if (provider === 'openai') text = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt });
-  else if (provider === 'anthropic') text = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt });
-  else throw new Error(`Unknown AI provider: ${provider}`);
+  if (provider === 'deepseek') {
+    text = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt });
+    // If DeepSeek returned empty (e.g., due to quota), try fallback to OpenAI if configured
+    if (!text && ai.fallbackProvider) {
+      const fallback = ai.fallbackProvider.toLowerCase();
+      if (fallback === 'openai') {
+        text = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt });
+      } else if (fallback === 'anthropic') {
+        text = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt });
+      }
+    }
+  } else if (provider === 'openai') {
+    text = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt });
+  } else if (provider === 'anthropic') {
+    text = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt });
+  } else {
+    throw new Error(`Unknown AI provider: ${provider}`);
+  }
 
   if (!text) throw new Error('AI returned empty comment');
   // Strip surrounding quotes if model added them
@@ -189,14 +212,29 @@ export async function generateCryptoOriginal({ postType, topic, researchContext,
     .replace('{{POST_TYPE}}', postType || 'midday_news')
     .replace('{{TOPIC}}', topic || '')
     .replace('{{RESEARCH_CONTEXT}}', researchContext || '')
-    .replace('{{RECENT_OPENINGS}}', recentOpenings && recentOpenings.length > 0 ? recentOpenings.map(o => `- ${o}`).join('\n') : 'Chưa có bài nào gần đây.');
+    .replace('{{RECENT_OPENINGS}}', recentOpenings && recentOpenings.length > 0 ? recentOpenings.map(o => `- ${o}`).join('\n') : 'Chưa có bài nào gần đây.')
+    .replace('{{EMOJI}}', '')
+    .replace('{{HASHTAGS}}', '');
 
   const provider = (ai.provider || 'deepseek').toLowerCase();
   let post = '';
-  if (provider === 'deepseek') post = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
-  else if (provider === 'openai') post = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
-  else if (provider === 'anthropic') post = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
-  else throw new Error(`Unknown AI provider: ${provider}`);
+  if (provider === 'deepseek') {
+    post = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+    if (!post && ai.fallbackProvider) {
+      const fallback = ai.fallbackProvider.toLowerCase();
+      if (fallback === 'openai') {
+        post = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+      } else if (fallback === 'anthropic') {
+        post = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+      }
+    }
+  } else if (provider === 'openai') {
+    post = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+  } else if (provider === 'anthropic') {
+    post = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt: prompt1 });
+  } else {
+    throw new Error(`Unknown AI provider: ${provider}`);
+  }
   
   if (!post) throw new Error('AI returned empty post');
 

@@ -63,7 +63,6 @@ export async function runAutonomousPostMode(cfg, log) {
     
     log(`[mode-E] Selected context from @${selectedTweet.author}: "${selectedTweet.fullText.slice(0, 40)}..."`);
     const researchContext = `TIN TỨC GẦN ĐÂY TỪ TÀI KHOẢN @${selectedTweet.author}:\n${selectedTweet.fullText}`;
-    const topic = "thị trường crypto / tin tức mới"; 
 
     // 4. Generate Draft (2-pass)
     const recentOpenings = getRecentOpenings(5);
@@ -72,7 +71,7 @@ export async function runAutonomousPostMode(cfg, log) {
     try {
       postContent = await generateCryptoOriginal({
         postType: slotName,
-        topic,
+        topic: '',
         researchContext,
         recentOpenings,
         ai: cfg.ai
