@@ -22,10 +22,12 @@ The wizard asks 5 questions:
 
 2. **Telegram bot token + chat ID** — optional. See `guides/02-get-telegram-token.md`.
 
-3. **Mode** A / B / C:
+3. **Mode** A / B / C / D / E:
    - A = list comment. Sub-prompts: list IDs (comma-separated), language (`auto|en|ja|ko|zh`), style/persona free text.
    - B = amplify. Sub-prompts: owner's @username, hashtags (default `#XAUUSD,#Gold,#Crypto,#Bitcoin`), optional cross-post list ID.
-   - C = both.
+   - C = both (alternates A and B).
+   - D = auto post. Crawl lists, find top tweets, use as inspiration for new posts.
+   - E = autonomous post. Crawl lists for hottest tweets to use as context for completely new posts (dual loop with list comment).
    See `guides/03-modes-explained.md`.
 
 4. **Rate** — comments per hour (default 15). See `guides/04-rate-limits.md`.

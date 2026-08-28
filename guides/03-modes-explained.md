@@ -1,4 +1,4 @@
-# Ba chế độ A / B / C
+# Năm chế độ A / B / C / D / E
 
 ## Mode A — List comment
 
@@ -61,11 +61,39 @@
 
 ---
 
+## Mode D — Auto Post
+
+**Bot làm gì**: Định kỳ crawl các Twitter list được cấu hình, chọn ra các tweet có lượt tương tác (favoriteCount) cao nhất làm nguồn cảm hứng (inspiration), và dùng AI để viết lại thành một bài đăng hoàn toàn mới trên timeline của bạn.
+
+**Phù hợp cho**:
+- Người dùng muốn duy trì luồng bài đăng thường xuyên mà không cạn ý tưởng.
+- Tài khoản muốn chia sẻ các góc nhìn tương tự hoặc mở rộng từ các tweet hot trong ngành.
+
+**Lưu ý**: Chế độ này KHÔNG reply mà là đăng bài mới.
+
+---
+
+## Mode E — Autonomous Post (Dual Loop)
+
+**Bot làm gì**: Bot tự động thu thập các tweet hot nhất từ các `listIds` bạn thiết lập, dùng chúng làm bối cảnh (research context) và "tin tức" để AI tự động phân tích và tạo bài viết (post) mới hoàn toàn.
+Điều khác biệt là Mode E chạy **song song 2 tiến trình** (dual loop):
+1. **Tiến trình đăng bài (Post Loop)**: Định kỳ tạo bài viết mới.
+2. **Tiến trình đi comment (Comment Loop)**: Chạy giống Mode A (list comment).
+
+**Tính năng an toàn**: Sau khi đăng thành công một bài post mới, tiến trình comment sẽ tự động tạm dừng trong 20 phút để mô phỏng hành vi người thật, tránh rủi ro spam account.
+
+**Phù hợp cho**:
+- Tài khoản muốn "thả rông" hoàn toàn: vừa tự tạo content thu hút trên tường nhà, vừa chủ động đi tương tác (comment) với cộng đồng để kéo reach.
+
+---
+
 ## Tôi nên chọn cái nào?
 
 | Mục tiêu | Chọn |
 |---|---|
 | Mới bắt đầu, sợ bị ban | A |
 | Có content viral / signal trade chất lượng | B |
-| Account đã warm-up, muốn full power | C |
+| Account đã warm-up, muốn tương tác full power | C |
+| Muốn tự động đăng content dựa trên trend từ list | D |
+| Giải pháp "All-in-one": vừa tự đăng bài lấy tin tức từ list vừa tự đi comment | E |
 | Test thử bot trước khi commit | A với 1 list nhỏ + rate 5/hr |
