@@ -17,7 +17,7 @@ export function checkDraft(content, recentOpenings = []) {
 
   // Length check (Premium account so no 280 char limit)
   const len = content.length;
-  if (len < 80) reasons.push(`Quá ngắn: ${len} ký tự (tối thiểu 80)`);
+  if (len < 40) reasons.push(`Quá ngắn: ${len} ký tự (tối thiểu 40)`);
 
   // URL check
   if (URL_REGEX.test(content)) {
