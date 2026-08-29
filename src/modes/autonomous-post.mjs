@@ -1,4 +1,4 @@
-import { postTweet, fetchListTweets } from '../lib/twitter-http.mjs';
+import { postTweet, fetchListTweets, uploadImageFromUrl } from '../lib/twitter-http.mjs';
 import { generateCryptoOriginal } from '../lib/ai-commenter.mjs';
 import { getPostScheduleSlot, msUntilNextSlot } from '../lib/rate-limiter.mjs';
 import { sendAlert } from '../lib/telegram.mjs';
@@ -91,9 +91,23 @@ export async function runAutonomousPostMode(cfg, log) {
       continue;
     }
 
-    // 6. Post to Twitter
+    // 6. Upload media if the contextual tweet had any
+    let mediaIds = [];
+    if (selectedTweet.mediaUrls && selectedTweet.mediaUrls.length > 0) {
+      log(`[mode-E] Context tweet has ${selectedTweet.mediaUrls.length} image(s). Uploading...`);
+      for (const imgUrl of selectedTweet.mediaUrls) {
+        try {
+          const mId = await uploadImageFromUrl(imgUrl, cfg.cookiesFile);
+          if (mId) mediaIds.push(mId);
+        } catch (e) {
+          log(`[mode-E] Failed to upload image ${imgUrl}: ${e.message}`);
+        }
+      }
+    }
+
+    // 7. Post to Twitter
     try {
-      const tweetId = await postTweet(postContent, cfg.cookiesFile, { mediaIds: [] });
+      const tweetId = await postTweet(postContent, cfg.cookiesFile, { mediaIds });
       log(`[mode-E] OK auto-posted tweet ${tweetId} "${postContent.slice(0, 60)}..."`);
       
       // 7. Save to history

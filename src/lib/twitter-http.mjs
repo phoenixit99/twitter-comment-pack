@@ -250,6 +250,9 @@ export async function postTweet(text, cookiesFilePath, options = {}) {
     throw new Error(`CreateTweet failed (${result.status}): ${result.body.slice(0, 200)}`);
   }
   const data = JSON.parse(result.body);
+  if (data.errors && data.errors.length > 0) {
+    throw new Error(`X API Error ${data.errors[0].code}: ${data.errors[0].message}`);
+  }
   return data?.data?.create_tweet?.tweet_results?.result?.rest_id || 'ok';
 }
 
