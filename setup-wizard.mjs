@@ -125,15 +125,19 @@ function normalizeCookies(raw) {
   const modeB = existingCfg.modeB || { ownerUsername: '', hashtags: ['#XAUUSD', '#Gold', '#Crypto', '#Bitcoin'], crossPostListId: '' };
   const modeD = existingCfg.modeD || { listIds: [], language: 'auto', stylePrompt: '' };
   const modeE = existingCfg.modeE || {
-    listIds: [],
+    listIds: ["2071809302894194851", "2098053144278352258"],
     schedule: {
       slots: [
-        { name: "morning_breakdown", start: "07:00", end: "09:00" },
-        { name: "midday_news", start: "11:30", end: "13:00" },
-        { name: "afternoon_alpha", start: "15:00", end: "17:00" },
-        { name: "evening_question", start: "20:00", end: "22:00" },
-        { name: "midnight_degen", start: "23:30", end: "23:59" },
-        { name: "midnight_degen", start: "00:00", end: "01:00" }
+        { name: "morning_breakdown", start: "07:00", end: "08:30" },
+        { name: "morning_update", start: "09:00", end: "10:30" },
+        { name: "midday_news", start: "11:00", end: "12:30" },
+        { name: "afternoon_news", start: "13:00", end: "14:30" },
+        { name: "afternoon_alpha", start: "15:00", end: "16:30" },
+        { name: "evening_alpha", start: "17:00", end: "18:30" },
+        { name: "evening_question", start: "19:00", end: "20:30" },
+        { name: "night_question", start: "21:00", end: "22:30" },
+        { name: "midnight_degen", start: "23:00", end: "23:59" },
+        { name: "late_night_degen", start: "00:00", end: "01:00" }
       ]
     },
     topics: ["Bitcoin on-chain", "Ethereum Layer 2", "Solana DeFi", "Crypto thị trường vĩ mô"],
