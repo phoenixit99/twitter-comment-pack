@@ -200,21 +200,28 @@ export async function generateAgenticPost({ topic, researchContext, lang, style,
   return text.replace(/^["'`]+|["'`]+$/g, '').trim();
 }
 
-export async function generateCryptoOriginal({ postType, topic, researchContext, recentOpenings, ai }) {
+export async function generateCryptoOriginal({ postType, topic, researchContext, recentOpenings, ai, promptFile, format }) {
+  const file = promptFile || 'prompts/post_original.txt';
   let sysPrompt = '';
   try {
-    sysPrompt = fs.readFileSync(path.resolve('prompts/post_original.txt'), 'utf-8');
+    sysPrompt = fs.readFileSync(path.resolve(file), 'utf-8');
   } catch (e) {
-    throw new Error('Missing prompts/post_original.txt');
+    throw new Error(`Missing ${file}`);
+  }
+
+  // Custom prompts without a {{FORMAT}} placeholder still get the format rule
+  if (format?.instruction && !sysPrompt.includes('{{FORMAT}}')) {
+    sysPrompt += '\n\nĐỊNH DẠNG BÀI LẦN NÀY: {{FORMAT}}';
   }
 
   const prompt1 = sysPrompt
-    .replace('{{POST_TYPE}}', postType || 'midday_news')
-    .replace('{{TOPIC}}', topic || '')
-    .replace('{{RESEARCH_CONTEXT}}', researchContext || '')
-    .replace('{{RECENT_OPENINGS}}', recentOpenings && recentOpenings.length > 0 ? recentOpenings.map(o => `- ${o}`).join('\n') : 'Chưa có bài nào gần đây.')
-    .replace('{{EMOJI}}', '')
-    .replace('{{HASHTAGS}}', '');
+    .replaceAll('{{POST_TYPE}}', postType || 'midday_news')
+    .replaceAll('{{TOPIC}}', topic || 'tự chọn theo tin trong RESEARCH CONTEXT')
+    .replaceAll('{{FORMAT}}', format?.instruction || '')
+    .replaceAll('{{RESEARCH_CONTEXT}}', researchContext || '')
+    .replaceAll('{{RECENT_OPENINGS}}', recentOpenings && recentOpenings.length > 0 ? recentOpenings.map(o => `- ${o}`).join('\n') : 'Chưa có bài nào gần đây.')
+    .replaceAll('{{EMOJI}}', '')
+    .replaceAll('{{HASHTAGS}}', '');
 
   const provider = (ai.provider || 'deepseek').toLowerCase();
   let post = '';

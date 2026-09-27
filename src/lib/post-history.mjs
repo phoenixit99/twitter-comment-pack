@@ -80,3 +80,21 @@ export function todayPostCount(date) {
     (entry) => entry.postedAt && entry.postedAt.startsWith(date)
   ).length;
 }
+
+/**
+ * Format of the most recent post (Mode E content plan), or null.
+ * @returns {string|null}
+ */
+export function getLastFormat() {
+  const history = readHistory();
+  return history.length ? history[history.length - 1].format || null : null;
+}
+
+/**
+ * IDs of source tweets already used as research context, so the same hot
+ * tweet is not rewritten into several posts.
+ * @returns {Set<string>}
+ */
+export function getUsedSourceIds() {
+  return new Set(readHistory().map((e) => e.sourceTweetId).filter(Boolean));
+}

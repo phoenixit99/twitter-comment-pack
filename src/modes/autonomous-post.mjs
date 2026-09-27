@@ -3,7 +3,8 @@ import { generateCryptoOriginal } from '../lib/ai-commenter.mjs';
 import { getPostScheduleSlot, msUntilNextSlot } from '../lib/rate-limiter.mjs';
 import { sendAlert } from '../lib/telegram.mjs';
 import { checkDraft } from '../lib/quality-gate.mjs';
-import { getRecentOpenings, addPost, hasPostedInSlot } from '../lib/post-history.mjs';
+import { getRecentOpenings, addPost, hasPostedInSlot, getLastFormat, getUsedSourceIds } from '../lib/post-history.mjs';
+import { pickPillar, pickFormat, pickTopic, rankSourceTweets } from '../lib/content-plan.mjs';
 
 export async function runAutonomousPostMode(cfg, log) {
   // 1. Check schedule slot
@@ -28,10 +29,16 @@ export async function runAutonomousPostMode(cfg, log) {
     attempt++;
     log(`[mode-E] Slot "${slotName}" active. Generating post (Attempt ${attempt}/${maxRetries})...`);
 
-    // 3. Fetch Hot Tweets from Lists for Research Context
-    const listIds = cfg.modeE?.listIds || cfg.modeA?.listIds || [];
+    // 3. Decide what to post: pillar (crypto / ai_tech / ...), topic, format
+    const pillar = pickPillar(cfg, slotName);
+    const topic = pickTopic(pillar);
+    const format = pickFormat(cfg, pillar, getLastFormat());
+    log(`[mode-E] Plan: pillar=${pillar.name} format=${format?.name || 'legacy'} topic="${topic}"`);
+
+    // 4. Fetch Hot Tweets from the pillar's lists for Research Context
+    const listIds = pillar.listIds;
     if (listIds.length === 0) {
-      log('[mode-E] No list IDs configured for fetching context. Skipping.');
+      log(`[mode-E] No list IDs configured for pillar "${pillar.name}". Skipping.`);
       return 15 * 60000;
     }
 
@@ -49,14 +56,13 @@ export async function runAutonomousPostMode(cfg, log) {
       }
     }
 
+    // Fresh (<24h), not used before, highest engagement first
+    pool = rankSourceTweets(pool, getUsedSourceIds());
     if (pool.length === 0) {
       log('[mode-E] Could not fetch any tweets for context. Retrying later.');
       return 15 * 60000;
     }
 
-    // Sort by favoriteCount descending (highest engagement first)
-    pool.sort((a, b) => (b.favoriteCount || 0) - (a.favoriteCount || 0));
-    
     // Pick one of the top 5 hot tweets randomly to ensure variety
     const topTweets = pool.slice(0, 5);
     const selectedTweet = topTweets[Math.floor(Math.random() * topTweets.length)];
@@ -64,17 +70,19 @@ export async function runAutonomousPostMode(cfg, log) {
     log(`[mode-E] Selected context from @${selectedTweet.author}: "${selectedTweet.fullText.slice(0, 40)}..."`);
     const researchContext = `TIN TỨC GẦN ĐÂY TỪ TÀI KHOẢN @${selectedTweet.author}:\n${selectedTweet.fullText}`;
 
-    // 4. Generate Draft (2-pass)
+    // 5. Generate Draft
     const recentOpenings = getRecentOpenings(5);
     let postContent = '';
     
     try {
       postContent = await generateCryptoOriginal({
         postType: slotName,
-        topic: '',
+        topic,
         researchContext,
         recentOpenings,
-        ai: cfg.ai
+        ai: cfg.ai,
+        promptFile: pillar.promptFile,
+        format
       });
     } catch (e) {
       log(`[mode-E] Generation failed: ${e.message}`);
@@ -82,8 +90,10 @@ export async function runAutonomousPostMode(cfg, log) {
       continue;
     }
 
-    // 5. Quality Gate
-    const checkResult = checkDraft(postContent, recentOpenings);
+    // 6. Quality Gate
+    const checkResult = checkDraft(postContent, recentOpenings, {
+      requireQuestion: format ? format.requireQuestion : true
+    });
     if (!checkResult.pass) {
       log(`[mode-E] Quality check failed: ${checkResult.reasons.join(', ')}`);
       log(`[mode-E] Rejected content: ${postContent.replace(/\n/g, ' ')}`);
@@ -91,9 +101,9 @@ export async function runAutonomousPostMode(cfg, log) {
       continue;
     }
 
-    // 6. Upload media if the contextual tweet had any
+    // 7. Upload media if the contextual tweet had any (disable with modeE.reuseSourceMedia=false)
     let mediaIds = [];
-    if (selectedTweet.mediaUrls && selectedTweet.mediaUrls.length > 0) {
+    if (cfg.modeE?.reuseSourceMedia !== false && selectedTweet.mediaUrls && selectedTweet.mediaUrls.length > 0) {
       log(`[mode-E] Context tweet has ${selectedTweet.mediaUrls.length} image(s). Uploading...`);
       for (const imgUrl of selectedTweet.mediaUrls) {
         try {
@@ -105,21 +115,25 @@ export async function runAutonomousPostMode(cfg, log) {
       }
     }
 
-    // 7. Post to Twitter
+    // 8. Post to Twitter
     try {
       const tweetId = await postTweet(postContent, cfg.cookiesFile, { mediaIds });
       log(`[mode-E] OK auto-posted tweet ${tweetId} "${postContent.slice(0, 60)}..."`);
       
-      // 7. Save to history
+      // 9. Save to history (pillar/format kept so you can compare which ones perform)
       addPost({
         content: postContent,
         type: slotName,
+        pillar: pillar.name,
+        format: format?.name || null,
+        topic,
+        sourceTweetId: selectedTweet.id,
         postedAt: new Date().toISOString(),
         tweetId
       });
 
-      // 8. Telegram alert
-      await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId, `🪙 Bài gốc đã đăng [${slotName}]:\n\n${postContent}`);
+      // 10. Telegram alert
+      await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId, `🪙 Bài gốc đã đăng [${slotName} · ${pillar.name} · ${format?.name || 'legacy'}]:\n\n${postContent}`);
       
       return 'POSTED';
       
