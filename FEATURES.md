@@ -67,6 +67,12 @@ Bot tự động crawl các Twitter list được chỉ định để tìm ra c�
 Bot tự động crawl các tweet hot nhất từ các list cấu hình (`listIds`), dùng nội dung đó làm bối cảnh (research context) để AI phân tích, tổng hợp và tự động viết một bài đăng hoàn toàn mới.
 Đặc biệt, Mode E chạy song song (dual loop) cả việc đăng bài mới và đi bình luận dạo (giống Mode A), tuy nhiên nó sẽ tự động tạm dừng comment trong 20 phút ngay sau khi vừa đăng bài mới để tránh hành vi bất thường.
 
+- **Content pillars** (`modeE.pillars`): chia nội dung thành nhiều mảng (vd `crypto` + `ai_tech`), mỗi mảng có list nguồn, topics, prompt riêng và trọng số. Slot có thể ghim mảng bằng `"pillar": "ai_tech"`.
+- **Đa dạng định dạng bài**: hot take, câu hỏi, mini list, giải thích dễ hiểu, trải nghiệm cá nhân — xoay vòng, không lặp định dạng 2 bài liền.
+- **Không dùng lại tin nguồn**: mỗi tweet nguồn chỉ dùng 1 lần, ưu tiên tin < 24h.
+- **Reply-back** (`modeE.replyBack`): tự động like + trả lời người bình luận dưới bài của bạn trong vòng ~10 phút (AI, cùng persona, cùng ngôn ngữ), bỏ qua spam, giới hạn theo giờ / theo bài / theo người.
+- Chiến lược tăng trưởng chi tiết: `guides/05-growth-strategy.md`.
+
 ---
 
 ## 3. Đa nhà cung cấp AI — bạn cầm chìa khóa

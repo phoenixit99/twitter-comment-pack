@@ -19,19 +19,46 @@
     "listIds": ["2071809302894194851", "2098053144278352258"],
     "schedule": {
       "slots": [
-        { "name": "morning_breakdown", "start": "07:00", "end": "08:30" },
-        { "name": "morning_update", "start": "09:00", "end": "10:30" },
+        { "name": "morning_breakdown", "start": "07:00", "end": "08:30", "pillar": "crypto" },
+        { "name": "morning_update", "start": "09:00", "end": "10:30", "pillar": "ai_tech" },
         { "name": "midday_news", "start": "11:00", "end": "12:30" },
-        { "name": "afternoon_news", "start": "13:00", "end": "14:30" },
+        { "name": "afternoon_news", "start": "13:00", "end": "14:30", "pillar": "ai_tech" },
         { "name": "afternoon_alpha", "start": "15:00", "end": "16:30" },
         { "name": "evening_alpha", "start": "17:00", "end": "18:30" },
-        { "name": "evening_question", "start": "19:00", "end": "20:30" },
+        { "name": "evening_question", "start": "19:00", "end": "20:30", "pillar": "ai_tech" },
         { "name": "night_question", "start": "21:00", "end": "22:30" },
-        { "name": "midnight_degen", "start": "23:00", "end": "23:59" },
+        { "name": "midnight_degen", "start": "23:00", "end": "23:59", "pillar": "crypto" },
         { "name": "late_night_degen", "start": "00:00", "end": "01:00" }
       ]
     },
     "topics": ["Bitcoin on-chain", "Ethereum Layer 2", "Solana DeFi", "Crypto thị trường vĩ mô"],
+    "pillars": [
+      {
+        "name": "crypto",
+        "weight": 60,
+        "listIds": ["2093176214320206077"],
+        "topics": ["Bitcoin on-chain", "Ethereum Layer 2", "Solana DeFi", "Crypto thị trường vĩ mô"],
+        "promptFile": "prompts/post_original.txt"
+      },
+      {
+        "name": "ai_tech",
+        "weight": 40,
+        "listIds": ["YOUR_AI_TECH_LIST_ID"],
+        "topics": ["Tool AI mới", "Demo AI agent", "AI tạo ảnh/video", "Mẹo dùng ChatGPT/Claude/Gemini cho công việc", "AI x Crypto"],
+        "promptFile": "prompts/post_ai_tech.txt"
+      }
+    ],
+    "reuseSourceMedia": true,
+    "replyBack": {
+      "enabled": true,
+      "ownUsername": "your_handle_here",
+      "pollMinutes": 10,
+      "lookbackHours": 24,
+      "maxPerHour": 8,
+      "maxPerPost": 10,
+      "maxPerAuthorPerPost": 2,
+      "likeReplies": true
+    },
     "maxRetries": 3
   },
   "commentsPerHour": 15,

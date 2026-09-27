@@ -47,6 +47,7 @@ When the user asks how to do something, point them to the right guide:
 - Telegram → `guides/02-get-telegram-token.md`
 - Mode choice → `guides/03-modes-explained.md`
 - Rate limits → `guides/04-rate-limits.md`
+- Growth / content strategy, Mode E pillars → `guides/05-growth-strategy.md`
 
 ## Troubleshooting
 

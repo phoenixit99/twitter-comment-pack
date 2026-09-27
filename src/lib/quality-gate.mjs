@@ -10,9 +10,11 @@ const QUESTION_REGEX = /\?/;
 /**
  * @param {string} content — the post content to check
  * @param {string[]} recentOpenings — up to 5 recent opening sentences
+ * @param {{ requireQuestion?: boolean }} [opts] — formats like hot takes or lists don't need a question
  * @returns {{ pass: boolean, reasons: string[] }}
  */
-export function checkDraft(content, recentOpenings = []) {
+export function checkDraft(content, recentOpenings = [], opts = {}) {
+  const { requireQuestion = true } = opts;
   const reasons = [];
 
   // Length check (Premium account so no 280 char limit)
@@ -31,7 +33,7 @@ export function checkDraft(content, recentOpenings = []) {
   }
 
   // Question check
-  if (!QUESTION_REGEX.test(content)) {
+  if (requireQuestion && !QUESTION_REGEX.test(content)) {
     reasons.push('Không có câu hỏi — bài gốc phải kết bằng câu hỏi');
   }
 
