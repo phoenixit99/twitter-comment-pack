@@ -106,9 +106,32 @@ Turn it on under `modeE` in `data/config.json`:
 
 ## 5. Measure, then cut
 
-`data/post-history.json` now records `pillar`, `format`, `topic` and `sourceTweetId` for each post. After about 2 weeks, compare impressions and engagement in X Analytics for each pillar and format:
+`data/post-history.json` records `pillar`, `format`, `topic` and `sourceTweetId` for each post. When `modeE.ownUsername` is set, Mode E also pulls **views, likes, replies, reposts, quotes and bookmarks** for your posts every 2 hours and stores them as `metrics` on each post.
 
-- Raise the `weight` of the pillar that wins, and remove formats that are below average.
+```bash
+npm run report        # all posts
+npm run report -- 7   # last 7 days
+```
+
+The report shows average and median views and engagement rate by pillar, format and time slot, plus your top 5 posts.
+
+- Raise the `weight` of the pillar that wins, and remove formats that are below average. Move or drop slots that stay at the bottom.
+
+### Auto-tune (optional)
+
+```json
+"ownUsername": "RobertNguyen_99",
+"autoTune": { "enabled": true, "metric": "views", "minSamples": 5 }
+```
+
+Before each post, the weight of every pillar and format is multiplied by *(its average score ÷ overall average)*, clamped to 0.5×–2×.
+
+- Only "mature" posts count: older than 24h (`minAgeHours`) and newer than 21 days (`maxAgeDays`).
+- A pillar or format keeps 1× until it has `minSamples` mature posts.
+- Slots pinned to a pillar (`"pillar": "..."`) are not changed.
+- `metric`: `views` (reach, the default), `engagements`, or `engagementRate`.
+- The current multipliers are printed in `data/run.log` after each sync and at the end of `npm run report`.
+- Leave it off for the first ~2 weeks so every pillar and format gets tried fairly, then turn it on.
 - Targets for a healthy small account: engagement rate above 2%, and 1 or more posts a week at 5–10× your normal impressions (that's the post to copy).
 
 ## 6. Profile basics (one-time)
@@ -120,5 +143,5 @@ Turn it on under `modeE` in `data/config.json`:
 ## Next features worth building
 
 1. ~~Reply-back loop~~ — done, see "Reply-back (automatic)".
-2. **Metrics sync**: fetch views and likes for each `tweetId` in post-history, so pillar and format weights can tune themselves automatically.
+2. ~~Metrics sync + auto-tune~~ — done, see "Measure, then cut".
 3. **Bigger-account targeting for replies**: prefer tweets from high-follower authors that are under 30 minutes old.

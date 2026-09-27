@@ -13,6 +13,8 @@ import { runHybridADMode } from './modes/hybrid-ad.mjs';
 import { runAutoPostMode } from './modes/auto-post.mjs';
 import { runAutonomousPostMode } from './modes/autonomous-post.mjs';
 import { runReplyBackMode, getReplyBackConfig } from './modes/reply-back.mjs';
+import { runMetricsSync, getAutoTuneConfig } from './modes/metrics-sync.mjs';
+import { getOwnUsername } from './lib/content-plan.mjs';
 import { runWarmup } from './warmup.mjs';
 
 const DEBUG = process.argv.includes('--debug');
@@ -134,7 +136,7 @@ async function main() {
 }
 
 async function runAutonomousLoop(cfg) {
-  log(`Starting Mode E (Autonomous Post + List Comment + optional Reply-back)`);
+  log(`Starting Mode E (Autonomous Post + List Comment + optional Reply-back / Metrics sync)`);
 
   // Shared state to pause comments for 20 mins after a post
   let commentPauseUntil = 0;
@@ -208,9 +210,25 @@ async function runAutonomousLoop(cfg) {
     }
   };
 
+  // LOOP 4: Metrics sync — views/engagement of own posts into post-history
+  // (feeds `npm run report` and modeE.autoTune)
+  const metricsLoop = async () => {
+    const { syncHours } = getAutoTuneConfig(cfg);
+    log(`[metrics] syncing own post metrics every ${syncHours}h`);
+    while (true) {
+      try {
+        await runMetricsSync(cfg, log);
+      } catch (e) {
+        log(`[metrics] sync error: ${e.message}`);
+      }
+      await sleep(syncHours * 3600 * 1000 * (0.9 + Math.random() * 0.2));
+    }
+  };
+
   // Run loops concurrently
   const loops = [postLoop(), commentLoop()];
   if (getReplyBackConfig(cfg).enabled) loops.push(replyBackLoop());
+  if (getOwnUsername(cfg)) loops.push(metricsLoop());
   await Promise.all(loops);
 }
 

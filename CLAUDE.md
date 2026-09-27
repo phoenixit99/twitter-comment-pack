@@ -40,6 +40,8 @@ The wizard asks 5 questions:
 
 `npm start`. Bot writes to `data/run.log`. To watch live in PowerShell: `Get-Content data/run.log -Wait`. On Linux/macOS: `tail -f data/run.log`.
 
+Post performance (Mode E, needs `modeE.ownUsername`): `npm run report`.
+
 ## Useful guides
 
 When the user asks how to do something, point them to the right guide:

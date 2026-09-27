@@ -49,9 +49,17 @@
       }
     ],
     "reuseSourceMedia": true,
+    "ownUsername": "your_handle_here",
+    "autoTune": {
+      "enabled": false,
+      "metric": "views",
+      "minSamples": 5,
+      "minAgeHours": 24,
+      "maxAgeDays": 21,
+      "syncHours": 2
+    },
     "replyBack": {
       "enabled": true,
-      "ownUsername": "your_handle_here",
       "pollMinutes": 10,
       "lookbackHours": 24,
       "maxPerHour": 8,

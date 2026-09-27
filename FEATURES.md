@@ -71,6 +71,7 @@ Bot tự động crawl các tweet hot nhất từ các list cấu hình (`listId
 - **Đa dạng định dạng bài**: hot take, câu hỏi, mini list, giải thích dễ hiểu, trải nghiệm cá nhân — xoay vòng, không lặp định dạng 2 bài liền.
 - **Không dùng lại tin nguồn**: mỗi tweet nguồn chỉ dùng 1 lần, ưu tiên tin < 24h.
 - **Reply-back** (`modeE.replyBack`): tự động like + trả lời người bình luận dưới bài của bạn trong vòng ~10 phút (AI, cùng persona, cùng ngôn ngữ), bỏ qua spam, giới hạn theo giờ / theo bài / theo người.
+- **Đo hiệu quả + tự tối ưu** (`modeE.ownUsername`, `modeE.autoTune`): mỗi 2h lấy view/like/reply/repost của bài vào `data/post-history.json`; `npm run report` xem bảng theo mảng / định dạng / khung giờ; bật `autoTune` để bot tự tăng tỉ lệ mảng & định dạng hiệu quả (0.5×–2×).
 - Chiến lược tăng trưởng chi tiết: `guides/05-growth-strategy.md`.
 
 ---

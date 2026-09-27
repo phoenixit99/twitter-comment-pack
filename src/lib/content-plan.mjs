@@ -83,16 +83,27 @@ export function weightedPick(items, rand = Math.random) {
 }
 
 /**
- * Choose the pillar for a slot. A slot may pin a pillar with `"pillar": "ai_tech"`.
+ * Scale each item's weight by its auto-tune multiplier (default 1).
+ * @param {object[]} items
+ * @param {Record<string, number>} [mults]
  */
-export function pickPillar(cfg, slotName, rand = Math.random) {
+export function applyMultipliers(items, mults) {
+  if (!mults) return items;
+  return items.map((i) => ({ ...i, weight: (i.weight ?? 1) * (mults[i.name] ?? 1) }));
+}
+
+/**
+ * Choose the pillar for a slot. A slot may pin a pillar with `"pillar": "ai_tech"`
+ * (pinned slots ignore auto-tuning).
+ */
+export function pickPillar(cfg, slotName, rand = Math.random, tuning = null) {
   const pillars = getPillars(cfg);
   const slot = (cfg.modeE?.schedule?.slots || []).find((s) => s.name === slotName);
   if (slot?.pillar) {
     const pinned = pillars.find((p) => p.name === slot.pillar);
     if (pinned) return pinned;
   }
-  return weightedPick(pillars, rand);
+  return weightedPick(applyMultipliers(pillars, tuning?.pillar), rand);
 }
 
 /**
@@ -100,10 +111,16 @@ export function pickPillar(cfg, slotName, rand = Math.random) {
  * Prompts without a {{FORMAT}} placeholder keep the legacy behaviour
  * (question required) — see generateCryptoOriginal.
  */
-export function pickFormat(cfg, pillar, lastFormat, rand = Math.random) {
+export function pickFormat(cfg, pillar, lastFormat, rand = Math.random, tuning = null) {
   const formats = pillar?.formats || cfg.modeE?.formats || DEFAULT_FORMATS;
   const candidates = formats.length > 1 ? formats.filter((f) => f.name !== lastFormat) : formats;
-  return weightedPick(candidates, rand);
+  return weightedPick(applyMultipliers(candidates, tuning?.format), rand);
+}
+
+/** Own @username for Mode E features (metrics sync, reply-back). */
+export function getOwnUsername(cfg) {
+  return (cfg.modeE?.ownUsername || cfg.modeE?.replyBack?.ownUsername || cfg.modeB?.ownerUsername || '')
+    .replace(/^@/, '').trim();
 }
 
 export function pickTopic(pillar, rand = Math.random) {

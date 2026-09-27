@@ -218,6 +218,10 @@ function parseTweetEntry(entry) {
     isRetweet: Boolean(legacy.retweeted_status_result) || Boolean(legacy.retweeted_status_id_str),
     favoriteCount: legacy.favorite_count || 0,
     retweetCount: legacy.retweet_count || 0,
+    replyCount: legacy.reply_count || 0,
+    quoteCount: legacy.quote_count || 0,
+    bookmarkCount: legacy.bookmark_count || 0,
+    viewCount: Number(tweet.views?.count || tweet.tweet?.views?.count || 0),
     mediaUrls,
     urls: urlStrings,
   };
