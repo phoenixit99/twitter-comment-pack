@@ -5,13 +5,14 @@
  * first hour keeps the conversation (and the post) alive in the feed.
  *
  * Config (modeE.replyBack):
- *   enabled, ownUsername, pollMinutes, lookbackHours, maxPerHour,
+ *   enabled, ownUsername (or modeE.ownUsername), pollMinutes, lookbackHours, maxPerHour,
  *   maxPerPost, maxPerAuthorPerPost, likeReplies, delayMinMs, delayMaxMs, promptFile
  */
 import { searchTimeline, postTweet, favoriteTweet } from '../lib/twitter-http.mjs';
 import { generateReplyBack } from '../lib/ai-commenter.mjs';
 import { selectReplyCandidates, cleanReplyText } from '../lib/reply-back-plan.mjs';
 import { getRecentPosts } from '../lib/post-history.mjs';
+import { getOwnUsername } from '../lib/content-plan.mjs';
 import {
   alreadyRepliedBack,
   markRepliedBack,
@@ -28,7 +29,7 @@ export function getReplyBackConfig(cfg) {
   const rb = cfg.modeE?.replyBack || {};
   return {
     enabled: rb.enabled === true,
-    ownUsername: (rb.ownUsername || cfg.modeB?.ownerUsername || '').replace(/^@/, ''),
+    ownUsername: getOwnUsername(cfg),
     pollMinutes: rb.pollMinutes ?? 10,
     lookbackHours: rb.lookbackHours ?? 24,
     maxPerHour: rb.maxPerHour ?? 8,

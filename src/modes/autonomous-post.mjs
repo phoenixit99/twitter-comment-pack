@@ -5,6 +5,7 @@ import { sendAlert } from '../lib/telegram.mjs';
 import { checkDraft } from '../lib/quality-gate.mjs';
 import { getRecentOpenings, addPost, hasPostedInSlot, getLastFormat, getUsedSourceIds } from '../lib/post-history.mjs';
 import { pickPillar, pickFormat, pickTopic, rankSourceTweets } from '../lib/content-plan.mjs';
+import { getTuning } from './metrics-sync.mjs';
 
 export async function runAutonomousPostMode(cfg, log) {
   // 1. Check schedule slot
@@ -30,9 +31,11 @@ export async function runAutonomousPostMode(cfg, log) {
     log(`[mode-E] Slot "${slotName}" active. Generating post (Attempt ${attempt}/${maxRetries})...`);
 
     // 3. Decide what to post: pillar (crypto / ai_tech / ...), topic, format
-    const pillar = pickPillar(cfg, slotName);
+    // Auto-tune (modeE.autoTune) scales weights by past performance
+    const tuning = getTuning(cfg);
+    const pillar = pickPillar(cfg, slotName, Math.random, tuning);
     const topic = pickTopic(pillar);
-    const format = pickFormat(cfg, pillar, getLastFormat());
+    const format = pickFormat(cfg, pillar, getLastFormat(), Math.random, tuning);
     log(`[mode-E] Plan: pillar=${pillar.name} format=${format?.name || 'legacy'} topic="${topic}"`);
 
     // 4. Fetch Hot Tweets from the pillar's lists for Research Context

@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node src/index.mjs",
     "setup": "node setup-wizard.mjs",
+    "report": "node scripts/report.mjs",
     "install-service": "node scripts/install-autostart.mjs",
     "postinstall": "patch-package"
   },

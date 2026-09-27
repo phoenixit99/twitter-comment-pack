@@ -6,7 +6,8 @@ import fs from 'fs';
 import path from 'path';
 
 const HISTORY_PATH = path.resolve('data/post-history.json');
-const MAX_ENTRIES = 50;
+// Enough for ~2 months at 6–10 posts/day, so performance can be compared
+const MAX_ENTRIES = 600;
 
 function readHistory() {
   try {
@@ -108,4 +109,27 @@ export function getRecentPosts(hours = 24, now = Date.now()) {
   return readHistory().filter(
     (e) => e.tweetId && e.tweetId !== 'ok' && new Date(e.postedAt).getTime() >= cutoff
   );
+}
+
+/**
+ * Merge fresh metrics into history entries by tweetId.
+ * @param {Map<string, object>} metricsById
+ * @returns {number} entries updated
+ */
+export function updateMetrics(metricsById) {
+  const history = readHistory();
+  let n = 0;
+  for (const e of history) {
+    const m = e.tweetId && metricsById.get(e.tweetId);
+    if (!m) continue;
+    e.metrics = { ...m, updatedAt: new Date().toISOString() };
+    n++;
+  }
+  if (n > 0) writeHistory(history);
+  return n;
+}
+
+/** Full post history (oldest first). */
+export function getAllPosts() {
+  return readHistory();
 }
