@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
 import { spawnSync } from 'child_process';
+import { migrateConfig } from './src/lib/config-migrate.mjs';
 
 const DATA_DIR = path.resolve('data');
 const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
@@ -82,16 +83,24 @@ function normalizeCookies(raw) {
   console.log('--- Question 1/5: Twitter cookies ---');
   console.log('Use the "Cookie-Editor" extension on x.com → Export → JSON.');
   console.log('You can also paste {"auth_token": "...", "ct0": "..."} format.');
-  const rawCookies = await askMultiline('Paste cookies JSON now:');
-  let cookieObj;
-  try {
-    cookieObj = normalizeCookies(rawCookies);
-  } catch (e) {
-    console.error('ERROR:', e.message);
-    process.exit(1);
+  let keepCookies = false;
+  if (fs.existsSync(COOKIES_PATH)) {
+    keepCookies = (await ask(`Existing ${COOKIES_PATH} found. Keep it? (Y/n): `)).toLowerCase() !== 'n';
   }
-  fs.writeFileSync(COOKIES_PATH, JSON.stringify(cookieObj, null, 2));
-  console.log(`Saved ${cookieObj.cookies.length} cookies to ${COOKIES_PATH}\n`);
+  if (keepCookies) {
+    console.log('Keeping existing cookies.\n');
+  } else {
+    const rawCookies = await askMultiline('Paste cookies JSON now:');
+    let cookieObj;
+    try {
+      cookieObj = normalizeCookies(rawCookies);
+    } catch (e) {
+      console.error('ERROR:', e.message);
+      process.exit(1);
+    }
+    fs.writeFileSync(COOKIES_PATH, JSON.stringify(cookieObj, null, 2));
+    console.log(`Saved ${cookieObj.cookies.length} cookies to ${COOKIES_PATH}\n`);
+  }
 
   // Q2: Telegram
   console.log('--- Question 2/5: Telegram alerts ---');
@@ -124,6 +133,9 @@ function normalizeCookies(raw) {
   const modeA = existingCfg.modeA || { listIds: [], language: 'auto', stylePrompt: '' };
   const modeB = existingCfg.modeB || { ownerUsername: '', hashtags: ['#XAUUSD', '#Gold', '#Crypto', '#Bitcoin'], crossPostListId: '' };
   const modeD = existingCfg.modeD || { listIds: [], language: 'auto', stylePrompt: '' };
+  // Which new-version keys the saved config lacks (computed before we edit it)
+  const added = migrateConfig({ ...existingCfg, mode }).added;
+
   const modeE = existingCfg.modeE || {
     listIds: ["2071809302894194851", "2098053144278352258"],
     schedule: {
@@ -172,6 +184,27 @@ function normalizeCookies(raw) {
     } else if (!modeE.listIds || modeE.listIds.length === 0) {
       modeE.listIds = [...modeA.listIds];
     }
+
+    // Bring modeE up to the current structure (pillars, replyBack, autoTune, ...)
+    Object.assign(modeE, migrateConfig({ mode, modeB, modeE }).cfg.modeE);
+
+    const me = await ask(`  Your X @username (for auto-reply + metrics) [${modeE.ownUsername || ''}]: `);
+    if (me) modeE.ownUsername = me.replace(/^@/, '').trim();
+
+    const aiPillar = modeE.pillars.find((p) => p.name === 'ai_tech');
+    if (aiPillar) {
+      const defaultAi = (aiPillar.listIds || []).join(',');
+      const aiIds = await ask(`  AI/tech list IDs for AI posts (comma-separated, blank = ${defaultAi ? 'keep' : 'no AI posts'})${defaultAi ? ` [${defaultAi}]` : ''}: `);
+      if (aiIds) aiPillar.listIds = aiIds.split(',').map((s) => s.trim()).filter(Boolean);
+      if (aiPillar.listIds.length > 0 && !aiPillar.weight) aiPillar.weight = 40;
+    }
+
+    if (modeE.ownUsername) {
+      const rbDefault = modeE.replyBack.enabled ? 'Y/n' : 'y/N';
+      const rb = (await ask(`  Auto-reply to comments on your posts? (${rbDefault}): `)).toLowerCase();
+      if (rb === 'y') modeE.replyBack.enabled = true;
+      else if (rb === 'n') modeE.replyBack.enabled = false;
+    }
   }
 
   if (mode === 'B' || mode === 'C') {
@@ -218,8 +251,15 @@ function normalizeCookies(raw) {
     delayMaxMs: existingCfg.delayMaxMs || 240000,
     ai: { provider, apiKey, model },
   };
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
+  // Fill any keys that are new in this version (never overwrites your values)
+  const migrated = migrateConfig(cfg).cfg;
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(migrated, null, 2));
   console.log(`\nWrote ${CONFIG_PATH}`);
+  if (added.length > 0) {
+    console.log('New config keys added (defaults, edit anytime):');
+    for (const k of added) console.log(`  + ${k}`);
+    console.log('See guides/05-growth-strategy.md');
+  }
 
   // Auto-start
   if (process.platform === 'win32') {

@@ -15,6 +15,7 @@ import { runAutonomousPostMode } from './modes/autonomous-post.mjs';
 import { runReplyBackMode, getReplyBackConfig } from './modes/reply-back.mjs';
 import { runMetricsSync, getAutoTuneConfig } from './modes/metrics-sync.mjs';
 import { getOwnUsername } from './lib/content-plan.mjs';
+import { migrateConfig } from './lib/config-migrate.mjs';
 import { runWarmup } from './warmup.mjs';
 
 const DEBUG = process.argv.includes('--debug');
@@ -110,6 +111,11 @@ async function main() {
   const cfg = loadConfig();
   initStore('data/store.db');
   log(`Mode: ${cfg.mode} | AI: ${cfg.ai.provider} | Rate: ${cfg.commentsPerHour}/hr | Posts: ${cfg.postsPerDay}/day`);
+
+  const missing = migrateConfig(cfg).added;
+  if (missing.length > 0) {
+    log(`[config] data/config.json is missing new settings (${missing.join(', ')}). Run: npm run update-config`);
+  }
 
   await sendAlert(cfg.telegram?.botToken, cfg.telegram?.chatId,
     `[twitter-comment-pack] started in mode ${cfg.mode}`);

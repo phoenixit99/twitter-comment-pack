@@ -15,6 +15,17 @@ What the code was doing, and the fix for each:
 | 10 posts a day on a small account | Each post gets tested on the same small set of followers. Weak posts drag down the account's average | Post 5–6 times a day and make each post better |
 | 1 reply an hour to the **newest** tweet in any list, no matter how big the account | Replies are how small accounts get discovered, but generic replies on small tweets reach nobody | See "Replies" below |
 
+## 0. Upgrade your config first
+
+`data/config.json` is gitignored, so pulling the new code does **not** add the new settings. Run one of these:
+
+```bash
+npm run update-config   # non-interactive: adds missing keys, keeps your values, writes data/config.backup-*.json
+npm run setup           # wizard: same migration + asks for @username, AI/tech list IDs, auto-reply on/off
+```
+
+After migrating, the `crypto` pillar reuses your existing `modeE.listIds` and `topics`. The `ai_tech` pillar starts with `weight: 0`, so nothing changes until you give it `listIds` and a weight (e.g. 40). `replyBack` and `autoTune` start disabled. On startup, the bot logs a hint if any settings are missing.
+
 ## 1. Content pillars (now in code)
 
 In `data/config.json`, add these under `modeE`:

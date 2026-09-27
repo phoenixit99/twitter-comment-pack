@@ -6,6 +6,7 @@ You are helping a user set up Twitter Comment Pack. Follow these steps.
 
 Look in `data/`:
 - If `data/config.json` exists, the user has already configured. Skip to Step 3 unless they want to reconfigure.
+- After pulling a new version, run `npm run update-config`. `data/config.json` is gitignored, so new settings never arrive through git. The command adds any missing keys with safe defaults, keeps every existing value, and writes a backup first. `npm run setup` does the same and also asks the new questions.
 - If `node_modules/` is missing, run `npm install` first.
 
 ## Step 2 — Run the wizard or write config directly
