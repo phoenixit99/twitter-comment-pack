@@ -247,3 +247,44 @@ export async function generateCryptoOriginal({ postType, topic, researchContext,
 
   return post.replace(/^["'`]+|["'`]+$/g, '').trim();
 }
+
+async function callProvider(ai, prompt) {
+  const provider = (ai.provider || 'deepseek').toLowerCase();
+  let text = '';
+  if (provider === 'deepseek') {
+    text = await callDeepseek({ apiKey: ai.apiKey, model: ai.model, prompt });
+    if (!text && ai.fallbackProvider) {
+      const fallback = ai.fallbackProvider.toLowerCase();
+      if (fallback === 'openai') text = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt });
+      else if (fallback === 'anthropic') text = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt });
+    }
+  } else if (provider === 'openai') {
+    text = await callOpenAI({ apiKey: ai.apiKey, model: ai.model, prompt });
+  } else if (provider === 'anthropic') {
+    text = await callAnthropic({ apiKey: ai.apiKey, model: ai.model, prompt });
+  } else {
+    throw new Error(`Unknown AI provider: ${provider}`);
+  }
+  return text;
+}
+
+/**
+ * Answer a reply left on one of our own posts (Mode E reply-back).
+ */
+export async function generateReplyBack({ myPost, theirReply, author, ai, promptFile }) {
+  const file = promptFile || 'prompts/reply_back.txt';
+  let sysPrompt = '';
+  try {
+    sysPrompt = fs.readFileSync(path.resolve(file), 'utf-8');
+  } catch (e) {
+    throw new Error(`Missing ${file}`);
+  }
+  const prompt = sysPrompt
+    .replaceAll('{{MY_POST}}', (myPost || '(không có nội dung)').slice(0, 600))
+    .replaceAll('{{THEIR_REPLY}}', (theirReply || '').slice(0, 500))
+    .replaceAll('{{AUTHOR}}', author || '');
+
+  const text = await callProvider(ai, prompt);
+  if (!text) throw new Error('AI returned empty reply');
+  return text.replace(/^["'`]+|["'`]+$/g, '').trim();
+}

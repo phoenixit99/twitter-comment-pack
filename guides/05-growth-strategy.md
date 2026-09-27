@@ -66,7 +66,31 @@ On a small account, most new followers come from **replies under big accounts**,
 - **Better replies, not more replies.** A generic AI reply ("hay quá ae") gets hidden under "Show more replies" and trains X to rank your account lower. Keep `commentsPerHour` at 1–2, but point `modeA.listIds` at big accounts (50k+ followers) in crypto **and** AI, whose readers overlap with your audience.
 - **Reply fast.** A reply in the first 15–30 minutes of a big tweet gets most of the views. The list crawler already sorts by newest.
 - **Every day, do 10–15 replies by hand** under the biggest crypto/AI accounts: add a number, a counter-point, or your own experience. Nothing automated beats this.
-- **Answer everyone who replies to your posts** within the first hour. X weights "author replied to a reply" heavily. It isn't automated yet (see "Next features").
+- **Answer everyone who replies to your posts** within the first hour. X weights "author replied to a reply" heavily. Mode E now does this automatically (reply-back, below). Still check the conversations by hand once a day.
+
+### Reply-back (automatic)
+
+Turn it on under `modeE` in `data/config.json`:
+
+```json
+"replyBack": {
+  "enabled": true,
+  "ownUsername": "RobertNguyen_99",
+  "pollMinutes": 10,
+  "lookbackHours": 24,
+  "maxPerHour": 8,
+  "maxPerPost": 10,
+  "maxPerAuthorPerPost": 2,
+  "likeReplies": true
+}
+```
+
+- Every `pollMinutes` it searches `to:<ownUsername>` and keeps only replies to **your own Mode E posts** from the last `lookbackHours`, plus replies to its own earlier answers, so a conversation can go 2 turns per person (`maxPerAuthorPerPost`).
+- Real comments get a like and an AI answer (`prompts/reply_back.txt`, same Robert persona, same language as the commenter). Very short ones (emoji, "gm") only get a like. Links and promo spam ("check my profile", t.me, …) are ignored.
+- It is **not** paused after a new post, because the first hour is when answering matters most.
+- Hourly cap: `maxPerHour`. Replies above the cap wait for the next cycle.
+- The table `replied_back` in `data/store.db` remembers everything it handled, so a restart never answers twice.
+- Only posts made by Mode E (in `data/post-history.json`) are covered. Posts you write by hand are not answered.
 
 ## 3. Post quality checklist
 
@@ -95,6 +119,6 @@ On a small account, most new followers come from **replies under big accounts**,
 
 ## Next features worth building
 
-1. **Reply-back loop**: poll replies to your own recent posts (`searchTimeline` with `conversation_id:<tweetId>`) and answer them within the hour.
+1. ~~Reply-back loop~~ — done, see "Reply-back (automatic)".
 2. **Metrics sync**: fetch views and likes for each `tweetId` in post-history, so pillar and format weights can tune themselves automatically.
 3. **Bigger-account targeting for replies**: prefer tweets from high-follower authors that are under 30 minutes old.

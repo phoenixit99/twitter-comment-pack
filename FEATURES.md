@@ -70,6 +70,7 @@ Bot tự động crawl các tweet hot nhất từ các list cấu hình (`listId
 - **Content pillars** (`modeE.pillars`): chia nội dung thành nhiều mảng (vd `crypto` + `ai_tech`), mỗi mảng có list nguồn, topics, prompt riêng và trọng số. Slot có thể ghim mảng bằng `"pillar": "ai_tech"`.
 - **Đa dạng định dạng bài**: hot take, câu hỏi, mini list, giải thích dễ hiểu, trải nghiệm cá nhân — xoay vòng, không lặp định dạng 2 bài liền.
 - **Không dùng lại tin nguồn**: mỗi tweet nguồn chỉ dùng 1 lần, ưu tiên tin < 24h.
+- **Reply-back** (`modeE.replyBack`): tự động like + trả lời người bình luận dưới bài của bạn trong vòng ~10 phút (AI, cùng persona, cùng ngôn ngữ), bỏ qua spam, giới hạn theo giờ / theo bài / theo người.
 - Chiến lược tăng trưởng chi tiết: `guides/05-growth-strategy.md`.
 
 ---

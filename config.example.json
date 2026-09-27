@@ -49,6 +49,16 @@
       }
     ],
     "reuseSourceMedia": true,
+    "replyBack": {
+      "enabled": true,
+      "ownUsername": "your_handle_here",
+      "pollMinutes": 10,
+      "lookbackHours": 24,
+      "maxPerHour": 8,
+      "maxPerPost": 10,
+      "maxPerAuthorPerPost": 2,
+      "likeReplies": true
+    },
     "maxRetries": 3
   },
   "commentsPerHour": 15,

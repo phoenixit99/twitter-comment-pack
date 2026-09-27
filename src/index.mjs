@@ -12,6 +12,7 @@ import { runHybridMode } from './modes/hybrid.mjs';
 import { runHybridADMode } from './modes/hybrid-ad.mjs';
 import { runAutoPostMode } from './modes/auto-post.mjs';
 import { runAutonomousPostMode } from './modes/autonomous-post.mjs';
+import { runReplyBackMode, getReplyBackConfig } from './modes/reply-back.mjs';
 import { runWarmup } from './warmup.mjs';
 
 const DEBUG = process.argv.includes('--debug');
@@ -133,7 +134,7 @@ async function main() {
 }
 
 async function runAutonomousLoop(cfg) {
-  log(`Starting Mode E (Dual Loop: Autonomous Post + List Comment)`);
+  log(`Starting Mode E (Autonomous Post + List Comment + optional Reply-back)`);
 
   // Shared state to pause comments for 20 mins after a post
   let commentPauseUntil = 0;
@@ -191,8 +192,26 @@ async function runAutonomousLoop(cfg) {
     }
   };
 
-  // Run both loops concurrently
-  await Promise.all([postLoop(), commentLoop()]);
+  // LOOP 3: Reply-back — answer people who reply to our own posts.
+  // Not paused after a post: the first hour is exactly when it matters.
+  const replyBackLoop = async () => {
+    const rb = getReplyBackConfig(cfg);
+    log(`[reply-back] enabled as @${rb.ownUsername || '?'} — polling every ${rb.pollMinutes}m, max ${rb.maxPerHour}/hr`);
+    while (true) {
+      try {
+        await runReplyBackMode(cfg, log);
+      } catch (e) {
+        log(`[reply-back] loop error: ${e.message}`);
+        await handleFatalError(e, cfg);
+      }
+      await sleep(rb.pollMinutes * 60 * 1000 * (0.8 + Math.random() * 0.4));
+    }
+  };
+
+  // Run loops concurrently
+  const loops = [postLoop(), commentLoop()];
+  if (getReplyBackConfig(cfg).enabled) loops.push(replyBackLoop());
+  await Promise.all(loops);
 }
 
 main().catch(async (e) => {
