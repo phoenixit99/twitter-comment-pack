@@ -1,0 +1,117 @@
+{
+  "_note": "Dán các khoá dưới đây vào data/config.json (giữ nguyên cookies, telegram, ai.apiKey của bạn). Thay YOUR_*_LIST_ID bằng ID list X thật (một list dùng chung cho cả 4 nhóm cũng được). Xoá khoá _note khi dán.",
+  "mode": "E",
+  "modeE": {
+    "ownUsername": "mayavo_",
+    "schedule": {
+      "slots": [
+        { "name": "morning", "start": "07:00", "end": "08:30" },
+        { "name": "noon", "start": "11:30", "end": "13:00", "pillar": "food" },
+        { "name": "evening", "start": "19:30", "end": "21:00" }
+      ]
+    },
+    "pillars": [
+      {
+        "name": "food",
+        "weight": 40,
+        "listIds": ["YOUR_FOOD_LIST_ID"],
+        "topics": [
+          "Bữa sáng 8 phút trước khi mở laptop",
+          "Món Á đơn giản nấu một mình, chỉ nguyên liệu và lửa",
+          "Quán ăn rẻ, nói giá thật",
+          "Đồ ăn nhà nấu so với đồ healthy order",
+          "Đi chợ cho 3 ngày",
+          "Một món ăn được hai bữa"
+        ],
+        "promptFile": "prompts/maya/post_food.txt"
+      },
+      {
+        "name": "daily",
+        "weight": 25,
+        "listIds": ["YOUR_LIFESTYLE_LIST_ID"],
+        "topics": [
+          "Hôm nay không mở chart",
+          "Ngồi cafe làm remote 4 tiếng",
+          "Đi bộ tối, tai nghe, không nhạc",
+          "Một ngày làm việc ở nhà theo mốc giờ",
+          "Cuối tuần sống chậm",
+          "Dọn bàn làm việc trước khi nghỉ"
+        ],
+        "promptFile": "prompts/maya/post_daily.txt"
+      },
+      {
+        "name": "gym",
+        "weight": 20,
+        "listIds": ["YOUR_FITNESS_LIST_ID"],
+        "topics": [
+          "Set gym 15 phút tại nhà",
+          "Túi gym để sẵn ở cửa, lý do không bỏ buổi",
+          "Một ngày không tập, ăn nhiều hơn, không tự trách",
+          "Tập 4 buổi một tuần khi làm remote",
+          "Bài mình ghét nhất trong set"
+        ],
+        "promptFile": "prompts/maya/post_gym.txt"
+      },
+      {
+        "name": "money",
+        "weight": 0,
+        "listIds": ["YOUR_FINANCE_LIST_ID"],
+        "topics": [
+          "Lương tháng này chia bao nhiêu % để dành, bao nhiêu % chi tiêu",
+          "Sai lầm năm đầu làm crypto: all-in một coin, mất ngủ",
+          "Portfolio update rất ngắn: phần lớn stable, phần nhỏ coin giữ dài",
+          "Tuần đỏ thì đóng app"
+        ],
+        "promptFile": "prompts/maya/post_money.txt"
+      }
+    ],
+    "formats": [
+      {
+        "name": "short_note",
+        "weight": 3,
+        "requireQuestion": false,
+        "instruction": "2–4 dòng ngắn như ghi chú cá nhân. Dòng đầu là chi tiết cụ thể (giá, số phút, nguyên liệu). Không kết bằng câu hỏi."
+      },
+      {
+        "name": "mini_list",
+        "weight": 2,
+        "requireQuestion": false,
+        "instruction": "1 dòng mở đầu + 3 dòng ngắn (nguyên liệu, bài tập, hoặc mốc giờ). Xuống dòng giữa các ý. Không gạch đầu dòng kiểu marketing."
+      },
+      {
+        "name": "small_story",
+        "weight": 2,
+        "requireQuestion": false,
+        "instruction": "Kể 1 khoảnh khắc nhỏ trong ngày ở ngôi thứ nhất, 3–4 câu ngắn, kết bằng một câu bình thản. Không bài học, không dạy đời."
+      },
+      {
+        "name": "light_question",
+        "weight": 1,
+        "requireQuestion": true,
+        "instruction": "Kể ngắn mình làm gì rồi hỏi một câu nhẹ, dễ trả lời (món gì, mấy giờ, A hay B). Câu cuối PHẢI kết thúc bằng dấu \"?\"."
+      }
+    ],
+    "reuseSourceMedia": false,
+    "autoTune": {
+      "enabled": false,
+      "metric": "views",
+      "minSamples": 5,
+      "minAgeHours": 24,
+      "maxAgeDays": 21,
+      "syncHours": 2
+    },
+    "replyBack": {
+      "enabled": true,
+      "pollMinutes": 15,
+      "lookbackHours": 24,
+      "maxPerHour": 4,
+      "maxPerPost": 6,
+      "maxPerAuthorPerPost": 1,
+      "likeReplies": true,
+      "promptFile": "prompts/maya/reply_back.txt"
+    },
+    "maxRetries": 3
+  },
+  "postsPerDay": 3,
+  "commentsPerHour": 0
+}
