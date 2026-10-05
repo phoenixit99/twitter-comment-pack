@@ -17,6 +17,7 @@ YÊU CẦU BẮT BUỘC:
 - KHÔNG URL (http/https), KHÔNG tag ai (@). {{HASHTAGS}}
 - Slang nhẹ cho tự nhiên: ae, fen, ní — nhưng không spam slang.
 - KHÔNG mở đầu bằng "Trời ơi", "Breaking", "JUST IN", "Attention".
+- KHÔNG ghi tên/nhãn định dạng vào bài (vd: "HOT TAKE:", "Mini list:", "Câu hỏi thảo luận:"). Viết thẳng nội dung.
 - KHÔNG hứa lợi nhuận, KHÔNG kêu gọi mua/bán cụ thể.
 
 KHUNG GIỜ (giọng văn theo {{POST_TYPE}}):

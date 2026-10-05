@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { parseJsonSafe } from './lib/json-safe.mjs';
 
 const CONFIG_PATH = path.resolve('data/config.json');
 
@@ -9,7 +10,7 @@ export function loadConfig() {
       `Missing data/config.json. Run: npm run setup`
     );
   }
-  const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+  const cfg = parseJsonSafe(fs.readFileSync(CONFIG_PATH, 'utf-8'));
   validate(cfg);
   return cfg;
 }
@@ -19,7 +20,8 @@ function validate(cfg) {
   if (!fs.existsSync(cfg.cookiesFile)) throw new Error(`Cookies file not found: ${cfg.cookiesFile}`);
   if (!cfg.mode || !['A', 'B', 'C', 'D', 'E'].includes(cfg.mode)) throw new Error('config.mode must be A, B, C, D, or E');
   if (!cfg.ai || !cfg.ai.provider || !cfg.ai.apiKey) throw new Error('config.ai.{provider,apiKey} required');
-  if (!cfg.commentsPerHour) cfg.commentsPerHour = 15;
+  // 0 means "comments off" — only fill in the default when the key is missing
+  if (cfg.commentsPerHour == null) cfg.commentsPerHour = 15;
   if (!cfg.postsPerDay) cfg.postsPerDay = 5;
 }
 

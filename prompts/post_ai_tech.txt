@@ -19,6 +19,7 @@ YÊU CẦU BẮT BUỘC:
 - KHÔNG URL (http/https), KHÔNG tag ai (@). {{HASHTAGS}}
 - KHÔNG bịa tính năng hay số liệu không có trong RESEARCH CONTEXT. KHÔNG phóng đại ("AI sắp thay thế tất cả").
 - KHÔNG mở đầu bằng "Trời ơi", "Breaking", "JUST IN", "Attention".
+- KHÔNG ghi tên/nhãn định dạng vào bài (vd: "HOT TAKE:", "Mini list:", "Câu hỏi thảo luận:"). Viết thẳng nội dung.
 
 Khung giờ đăng: {{POST_TYPE}} (sáng: tin mới/tool mới; trưa-chiều: use-case, mẹo dùng; tối: góc nhìn, xu hướng; đêm: chuyện vui/thú vị nhẹ nhàng).
 

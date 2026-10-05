@@ -232,7 +232,9 @@ async function runAutonomousLoop(cfg) {
   };
 
   // Run loops concurrently
-  const loops = [postLoop(), commentLoop()];
+  const loops = [postLoop()];
+  if (cfg.commentsPerHour > 0) loops.push(commentLoop());
+  else log('[mode-E] commentsPerHour is 0 — list comments are off');
   if (getReplyBackConfig(cfg).enabled) loops.push(replyBackLoop());
   if (getOwnUsername(cfg)) loops.push(metricsLoop());
   await Promise.all(loops);
