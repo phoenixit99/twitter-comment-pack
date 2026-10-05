@@ -7,6 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { migrateConfig } from '../src/lib/config-migrate.mjs';
+import { parseJsonSafe } from '../src/lib/json-safe.mjs';
 
 const CONFIG_PATH = path.resolve('data/config.json');
 
@@ -17,7 +18,7 @@ if (!fs.existsSync(CONFIG_PATH)) {
 
 let current;
 try {
-  current = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+  current = parseJsonSafe(fs.readFileSync(CONFIG_PATH, 'utf-8'));
 } catch (e) {
   console.error(`data/config.json is not valid JSON: ${e.message}`);
   process.exit(1);

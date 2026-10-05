@@ -6,6 +6,7 @@ import path from 'path';
 import readline from 'readline';
 import { spawnSync } from 'child_process';
 import { migrateConfig } from './src/lib/config-migrate.mjs';
+import { parseJsonSafe } from './src/lib/json-safe.mjs';
 
 const DATA_DIR = path.resolve('data');
 const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
@@ -113,7 +114,7 @@ function normalizeCookies(raw) {
   let existingCfg = {};
   if (fs.existsSync(CONFIG_PATH)) {
     try {
-      existingCfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
+      existingCfg = parseJsonSafe(fs.readFileSync(CONFIG_PATH, 'utf-8'));
     } catch {}
   }
 
@@ -218,8 +219,10 @@ function normalizeCookies(raw) {
   // Q4: rate
   console.log('\n--- Question 4/5: Rate ---');
   console.log('See guides/04-rate-limits.md. Safe: 10-20/hr. Aggressive: 20-30. >30 risky.');
-  const rateRaw = await ask(`Comments per hour [${existingCfg.commentsPerHour || 15}]: `);
-  const rate = parseInt(rateRaw, 10) || existingCfg.commentsPerHour || 15;
+  const defaultRate = existingCfg.commentsPerHour ?? 3;
+  const rateRaw = await ask(`Comments per hour, 0 = off [${defaultRate}]: `);
+  const parsedRate = parseInt(rateRaw, 10);
+  const rate = Number.isNaN(parsedRate) ? defaultRate : parsedRate;
   
   let postsPerDay = existingCfg.postsPerDay || 5;
   if (mode === 'D' || mode === 'E') {

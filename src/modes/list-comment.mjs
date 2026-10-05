@@ -3,7 +3,7 @@
  * the configured language + style.
  */
 import { fetchListTweets, postTweet } from '../lib/twitter-http.mjs';
-import { detectLanguage } from '../lib/language.mjs';
+import { detectLanguage, isFollowBackRequest } from '../lib/language.mjs';
 import { generateComment } from '../lib/ai-commenter.mjs';
 import { alreadyCommented, markCommented } from '../lib/store.mjs';
 import { waitForSlot, postSleep } from '../lib/rate-limiter.mjs';
@@ -25,6 +25,8 @@ export async function runListMode(cfg, log) {
       for (const t of tweets) {
         if (!t.id || !t.fullText || t.fullText.length < 10) continue;
         if (t.isRetweet) continue;
+        // Mode E builds a brand: no auto "Follow me back" replies
+        if (cfg.mode === 'E' && isFollowBackRequest(t.fullText)) continue;
         if (t.author && skip.has(t.author.toLowerCase())) continue;
         if (seen.has(t.id)) continue;
         if (alreadyCommented(t.id)) continue;

@@ -6,6 +6,10 @@ import fs from 'fs';
 import path from 'path';
 import { isFollowBackRequest, followBackReply } from './language.mjs';
 
+// Vietnamese with diacritics costs far more tokens per character than English;
+// 200 tokens could cut a 280-char post mid-sentence.
+const MAX_TOKENS = 400;
+
 const LANG_INSTRUCTION = {
   en: 'Write the reply in English.',
   ja: '日本語で返信を書いてください。',
@@ -57,7 +61,7 @@ async function callDeepseek({ apiKey, model, prompt }) {
       body: JSON.stringify({
         model: model || 'deepseek-chat',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 200,
+        max_tokens: MAX_TOKENS,
         temperature: 0.95,
       }),
     });
@@ -67,6 +71,10 @@ async function callDeepseek({ apiKey, model, prompt }) {
       return '';
     }
     const data = await res.json();
+    if (data?.choices?.[0]?.finish_reason === 'length') {
+      console.warn('DeepSeek warning: output hit max_tokens, discarding truncated text');
+      return '';
+    }
     return (data?.choices?.[0]?.message?.content || '').trim();
   } catch (e) {
     console.warn('DeepSeek request failed:', e.message);
@@ -81,12 +89,13 @@ async function callOpenAI({ apiKey, model, prompt }) {
     body: JSON.stringify({
       model: model || 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 200,
+      max_tokens: MAX_TOKENS,
       temperature: 0.95,
     }),
   });
   if (!res.ok) throw new Error(`OpenAI HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const data = await res.json();
+  if (data?.choices?.[0]?.finish_reason === 'length') throw new Error('OpenAI output truncated (max_tokens)');
   return (data?.choices?.[0]?.message?.content || '').trim();
 }
 
@@ -100,12 +109,13 @@ async function callAnthropic({ apiKey, model, prompt }) {
     },
     body: JSON.stringify({
       model: model || 'claude-haiku-4-5',
-      max_tokens: 300,
+      max_tokens: MAX_TOKENS,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
   if (!res.ok) throw new Error(`Anthropic HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const data = await res.json();
+  if (data?.stop_reason === 'max_tokens') throw new Error('Anthropic output truncated (max_tokens)');
   const block = (data?.content || []).find((b) => b.type === 'text');
   return (block?.text || '').trim();
 }

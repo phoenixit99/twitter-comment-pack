@@ -6,6 +6,8 @@
 const URL_REGEX = /https?:\/\/\S+/i;
 const HASHTAG_REGEX = /#\w+/g;
 const QUESTION_REGEX = /\?/;
+// Format names the model sometimes copies from the format instruction ("HOT TAKE: ...")
+const FORMAT_LABEL_REGEX = /^[\s\p{Extended_Pictographic}*_#]*(hot\s*take|mini\s*list|câu hỏi thảo luận|giải thích dễ hiểu|trải nghiệm cá nhân)\s*[:：\-–—]/iu;
 
 /**
  * @param {string} content — the post content to check
@@ -30,6 +32,11 @@ export function checkDraft(content, recentOpenings = [], opts = {}) {
   const hashtags = content.match(HASHTAG_REGEX) || [];
   if (hashtags.length > 3) {
     reasons.push(`Quá nhiều hashtag: ${hashtags.length} (tối đa 3)`);
+  }
+
+  // Format label check
+  if (FORMAT_LABEL_REGEX.test(content)) {
+    reasons.push('Mở đầu bằng nhãn định dạng (vd "HOT TAKE:") — phải viết thẳng nội dung');
   }
 
   // Question check

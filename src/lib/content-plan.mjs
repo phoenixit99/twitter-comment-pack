@@ -15,31 +15,31 @@ export const DEFAULT_FORMATS = [
     name: 'hot_take',
     weight: 3,
     requireQuestion: false,
-    instruction: 'HOT TAKE: 1 nhận định rõ ràng, có lập trường (đồng ý hoặc phản biện số đông), kèm 1 lý do cụ thể hoặc 1 con số. Không cần kết bằng câu hỏi.',
+    instruction: '1 nhận định rõ ràng, có lập trường (đồng ý hoặc phản biện số đông), kèm 1 lý do cụ thể hoặc 1 con số. Không cần kết bằng câu hỏi.',
   },
   {
     name: 'question',
     weight: 2,
     requireQuestion: true,
-    instruction: 'CÂU HỎI THẢO LUẬN: nêu bối cảnh ngắn rồi kết bằng 1 câu hỏi cụ thể, dễ trả lời (chọn A hay B, con số dự đoán, kinh nghiệm cá nhân). Câu cuối PHẢI kết thúc bằng dấu "?".',
+    instruction: 'Nêu bối cảnh ngắn rồi kết bằng 1 câu hỏi cụ thể, dễ trả lời (chọn A hay B, con số dự đoán, kinh nghiệm cá nhân). Câu cuối PHẢI kết thúc bằng dấu "?".',
   },
   {
     name: 'mini_list',
     weight: 2,
     requireQuestion: false,
-    instruction: 'MINI LIST: 1 dòng hook + 3 gạch đầu dòng ngắn (mỗi dòng 1 ý: tip, tool, bài học hoặc số liệu). Xuống dòng giữa các ý. Được phép dài tới 280 ký tự.',
+    instruction: '1 dòng hook + 3 gạch đầu dòng ngắn (mỗi dòng 1 ý: tip, tool, bài học hoặc số liệu). Xuống dòng giữa các ý. Được phép dài tới 280 ký tự.',
   },
   {
     name: 'explain_simple',
     weight: 2,
     requireQuestion: false,
-    instruction: 'GIẢI THÍCH DỄ HIỂU: giải thích 1 khái niệm/tin trong bài bằng ví dụ đời thường cho người mới, như đang nói với bạn thân. Không thuật ngữ khó.',
+    instruction: 'Giải thích 1 khái niệm/tin trong bài bằng ví dụ đời thường cho người mới, như đang nói với bạn thân. Không thuật ngữ khó.',
   },
   {
     name: 'personal_story',
     weight: 1,
     requireQuestion: false,
-    instruction: 'TRẢI NGHIỆM CÁ NHÂN: kể ngắn 1 trải nghiệm/sai lầm/bài học ở ngôi thứ nhất liên quan đến tin, giọng thật, không khoe khoang.',
+    instruction: 'Kể ngắn 1 trải nghiệm/sai lầm/bài học ở ngôi thứ nhất liên quan đến tin, giọng thật, không khoe khoang.',
   },
 ];
 

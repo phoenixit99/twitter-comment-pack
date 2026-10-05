@@ -29,7 +29,7 @@ The wizard asks 5 questions:
    - C = both.
    See `guides/03-modes-explained.md`.
 
-4. **Rate** — comments per hour (default 15). See `guides/04-rate-limits.md`.
+4. **Rate** — comments per hour (default 3, `0` turns comments off). See `guides/04-rate-limits.md`.
 
 5. **AI provider** — `deepseek` (default) | `openai` | `anthropic`, plus API key and optional model override.
 
