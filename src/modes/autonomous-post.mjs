@@ -1,11 +1,13 @@
-import { postTweet, fetchListTweets, uploadImageFromUrl } from '../lib/twitter-http.mjs';
+import { postTweet, fetchListTweets, uploadImageFromUrl, uploadImageFromFile } from '../lib/twitter-http.mjs';
 import { generateCryptoOriginal } from '../lib/ai-commenter.mjs';
 import { getPostScheduleSlot, msUntilNextSlot } from '../lib/rate-limiter.mjs';
 import { sendAlert } from '../lib/telegram.mjs';
 import { checkDraft } from '../lib/quality-gate.mjs';
-import { getRecentOpenings, addPost, hasPostedInSlot, getLastFormat, getUsedSourceIds } from '../lib/post-history.mjs';
+import { getRecentOpenings, addPost, hasPostedInSlot, getLastFormat, getUsedSourceIds, getUsedMediaFiles } from '../lib/post-history.mjs';
 import { pickPillar, pickFormat, pickTopic, rankSourceTweets } from '../lib/content-plan.mjs';
 import { getTuning } from './metrics-sync.mjs';
+import { chooseImage, imageHint } from '../lib/image-library.mjs';
+import { getApprovalConfig, readDraftState, hasDraftInSlot, addDraft, newDraftId } from '../lib/drafts.mjs';
 
 export async function runAutonomousPostMode(cfg, log) {
   // 1. Check schedule slot
@@ -22,6 +24,11 @@ export async function runAutonomousPostMode(cfg, log) {
     log(`[mode-E] Already posted for slot "${slotName}" today. Waiting for next slot.`);
     return msUntilNextSlot(cfg);
   }
+  const approval = getApprovalConfig(cfg).enabled;
+  if (approval && hasDraftInSlot(readDraftState().drafts, slotName, todayDate)) {
+    log(`[mode-E] Draft already made for slot "${slotName}" today. Waiting for next slot.`);
+    return msUntilNextSlot(cfg);
+  }
 
   const maxRetries = cfg.modeE?.maxRetries || 3;
   let attempt = 0;
@@ -34,7 +41,12 @@ export async function runAutonomousPostMode(cfg, log) {
     // Auto-tune (modeE.autoTune) scales weights by past performance
     const tuning = getTuning(cfg);
     const pillar = pickPillar(cfg, slotName, Math.random, tuning);
-    const topic = pickTopic(pillar);
+    // Own image (modeE.imageLibrary) — picked first so the text can match it
+    const mediaFile = chooseImage(cfg, pillar.name, getUsedMediaFiles());
+    const baseTopic = pickTopic(pillar);
+    const topic = mediaFile
+      ? `${baseTopic ? baseTopic + '. ' : ''}Bài đăng kèm 1 ảnh: "${imageHint(mediaFile)}". Viết khớp với ảnh, không mô tả lại ảnh từng chi tiết.`
+      : baseTopic;
     const format = pickFormat(cfg, pillar, getLastFormat(), Math.random, tuning);
     log(`[mode-E] Plan: pillar=${pillar.name} format=${format?.name || 'legacy'} topic="${topic}"`);
 
@@ -104,9 +116,39 @@ export async function runAutonomousPostMode(cfg, log) {
       continue;
     }
 
-    // 7. Upload media if the contextual tweet had any (disable with modeE.reuseSourceMedia=false)
+    // 6b. Approval mode: save a draft for Telegram review instead of posting
+    if (approval) {
+      const reuse = cfg.modeE?.reuseSourceMedia !== false;
+      const draft = {
+        id: newDraftId(),
+        status: 'pending',
+        content: postContent,
+        type: slotName,
+        pillar: pillar.name,
+        format: format?.name || null,
+        topic,
+        sourceTweetId: selectedTweet.id,
+        mediaUrls: !mediaFile && reuse ? (selectedTweet.mediaUrls || []) : [],
+        mediaFile,
+        createdAt: new Date().toISOString(),
+        telegramMessageId: null,
+      };
+      addDraft(draft);
+      log(`[mode-E] Draft ${draft.id} saved for approval (not posted)`);
+      return 'DRAFTED';
+    }
+
+    // 7. Media: own image from the library, else the source tweet's (modeE.reuseSourceMedia)
     let mediaIds = [];
-    if (cfg.modeE?.reuseSourceMedia !== false && selectedTweet.mediaUrls && selectedTweet.mediaUrls.length > 0) {
+    if (mediaFile) {
+      try {
+        const mId = await uploadImageFromFile(mediaFile, cfg.cookiesFile);
+        if (mId) mediaIds.push(mId);
+        log(`[mode-E] Attached own image ${mediaFile}`);
+      } catch (e) {
+        log(`[mode-E] Failed to upload own image ${mediaFile}: ${e.message}`);
+      }
+    } else if (cfg.modeE?.reuseSourceMedia !== false && selectedTweet.mediaUrls && selectedTweet.mediaUrls.length > 0) {
       log(`[mode-E] Context tweet has ${selectedTweet.mediaUrls.length} image(s). Uploading...`);
       for (const imgUrl of selectedTweet.mediaUrls) {
         try {
@@ -132,7 +174,8 @@ export async function runAutonomousPostMode(cfg, log) {
         topic,
         sourceTweetId: selectedTweet.id,
         postedAt: new Date().toISOString(),
-        tweetId
+        tweetId,
+        mediaFile: mediaIds.length && mediaFile ? mediaFile : undefined,
       });
 
       // 10. Telegram alert

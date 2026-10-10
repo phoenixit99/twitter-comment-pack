@@ -100,6 +100,11 @@ export function getUsedSourceIds() {
   return new Set(readHistory().map((e) => e.sourceTweetId).filter(Boolean));
 }
 
+/** Image-library files already posted, oldest first (modeE.imageLibrary). */
+export function getUsedMediaFiles() {
+  return readHistory().map((e) => e.mediaFile).filter(Boolean);
+}
+
 /**
  * Own original posts published in the last `hours` hours.
  * @returns {{ tweetId: string, content: string, postedAt: string }[]}

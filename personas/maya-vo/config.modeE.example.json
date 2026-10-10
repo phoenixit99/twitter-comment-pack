@@ -1,0 +1,172 @@
+{
+  "_note": "Dán các khoá dưới đây vào data/config.json (giữ nguyên cookies, telegram, ai.apiKey của bạn). Thay YOUR_*_LIST_ID bằng ID list X thật (một list dùng chung cho mọi nhóm cũng được). Bot tự đăng (approval tắt). Ảnh: đặt ảnh AI của Maya vào data/maya-images/<food|daily|gym|work>/ (xem README mục Ảnh). Muốn duyệt từng bài qua Telegram thì đặt approval.enabled = true. Xoá khoá _note khi dán.",
+  "mode": "E",
+  "modeE": {
+    "ownUsername": "mayavo_",
+    "schedule": {
+      "slots": [
+        {
+          "name": "gm",
+          "start": "07:30",
+          "end": "09:00",
+          "pillar": "daily"
+        },
+        {
+          "name": "noon",
+          "start": "11:30",
+          "end": "13:30",
+          "pillar": "food"
+        },
+        {
+          "name": "evening",
+          "start": "19:00",
+          "end": "21:00"
+        },
+        {
+          "name": "gn",
+          "start": "21:30",
+          "end": "22:30",
+          "pillar": "daily"
+        }
+      ]
+    },
+    "pillars": [
+      {
+        "name": "food",
+        "weight": 35,
+        "listIds": [
+          "YOUR_FOOD_LIST_ID"
+        ],
+        "topics": [
+          "Bữa sáng 8 phút trước khi mở laptop",
+          "Món Á đơn giản nấu một mình, chỉ nguyên liệu và lửa",
+          "Quán ăn rẻ, nói giá thật",
+          "Đồ ăn nhà nấu so với đồ healthy order",
+          "Đi chợ cho 3 ngày",
+          "Một món ăn được hai bữa"
+        ],
+        "promptFile": "prompts/maya/post_food.txt"
+      },
+      {
+        "name": "daily",
+        "weight": 20,
+        "listIds": [
+          "YOUR_LIFESTYLE_LIST_ID"
+        ],
+        "topics": [
+          "Hôm nay không mở chart",
+          "Ngồi cafe làm remote 4 tiếng",
+          "Đi bộ tối, tai nghe, không nhạc",
+          "Một ngày làm việc ở nhà theo mốc giờ",
+          "Cuối tuần sống chậm",
+          "Dọn bàn làm việc trước khi nghỉ",
+          "GM: việc đầu tiên sáng nay",
+          "GN: một điều nhỏ của hôm nay"
+        ],
+        "promptFile": "prompts/maya/post_daily.txt"
+      },
+      {
+        "name": "gym",
+        "weight": 20,
+        "listIds": [
+          "YOUR_FITNESS_LIST_ID"
+        ],
+        "topics": [
+          "Set gym 15 phút tại nhà",
+          "Túi gym để sẵn ở cửa, lý do không bỏ buổi",
+          "Một ngày không tập, ăn nhiều hơn, không tự trách",
+          "Tập 4 buổi một tuần khi làm remote",
+          "Bài mình ghét nhất trong set"
+        ],
+        "promptFile": "prompts/maya/post_gym.txt"
+      },
+      {
+        "name": "work",
+        "weight": 25,
+        "listIds": [
+          "YOUR_LIFESTYLE_LIST_ID"
+        ],
+        "topics": [
+          "Một ngày làm research remote",
+          "Thói quen làm việc tập trung",
+          "Điều mình học được tuần này",
+          "Xây tài khoản X mỗi ngày: điều mình thử tuần này",
+          "Bàn làm việc và deadline"
+        ],
+        "promptFile": "prompts/maya/post_work.txt"
+      },
+      {
+        "name": "money",
+        "weight": 0,
+        "listIds": [
+          "YOUR_FINANCE_LIST_ID"
+        ],
+        "topics": [
+          "Lương tháng này chia bao nhiêu % để dành, bao nhiêu % chi tiêu",
+          "Sai lầm năm đầu làm crypto: all-in một coin, mất ngủ",
+          "Portfolio update rất ngắn: phần lớn stable, phần nhỏ coin giữ dài",
+          "Tuần đỏ thì đóng app"
+        ],
+        "promptFile": "prompts/maya/post_money.txt"
+      }
+    ],
+    "formats": [
+      {
+        "name": "short_note",
+        "weight": 3,
+        "requireQuestion": false,
+        "instruction": "2–4 dòng ngắn như tám chuyện. Dòng đầu là chi tiết cụ thể (giá, số phút, món, khoảnh khắc). Không kết bằng câu hỏi."
+      },
+      {
+        "name": "photo_story",
+        "weight": 3,
+        "requireQuestion": false,
+        "instruction": "Kể câu chuyện nhỏ đằng sau bức ảnh/khoảnh khắc trong 3–4 câu ngắn, có một chút cảm xúc hoặc tự trào nhẹ. Không mô tả lại ảnh từng chi tiết."
+      },
+      {
+        "name": "light_question",
+        "weight": 2,
+        "requireQuestion": true,
+        "instruction": "Kể ngắn mình làm gì rồi hỏi một câu mở, dễ trả lời (món gì, mấy giờ, A hay B, mọi người thì sao). Câu cuối PHẢI kết thúc bằng dấu \"?\". Không xin like/follow/repost."
+      },
+      {
+        "name": "mini_list",
+        "weight": 1,
+        "requireQuestion": false,
+        "instruction": "1 dòng mở đầu + 3 dòng ngắn (nguyên liệu, bài tập, mốc giờ hoặc việc trong ngày). Xuống dòng giữa các ý."
+      }
+    ],
+    "reuseSourceMedia": false,
+    "imageLibrary": {
+      "enabled": true,
+      "dir": "data/maya-images",
+      "chance": 0.8
+    },
+    "approval": {
+      "enabled": false,
+      "expireMinutes": 720,
+      "pollSeconds": 30
+    },
+    "autoTune": {
+      "enabled": false,
+      "metric": "views",
+      "minSamples": 5,
+      "minAgeHours": 24,
+      "maxAgeDays": 21,
+      "syncHours": 2
+    },
+    "replyBack": {
+      "enabled": false,
+      "pollMinutes": 15,
+      "lookbackHours": 24,
+      "maxPerHour": 4,
+      "maxPerPost": 6,
+      "maxPerAuthorPerPost": 1,
+      "likeReplies": true,
+      "promptFile": "prompts/maya/reply_back.txt"
+    },
+    "maxRetries": 3
+  },
+  "postsPerDay": 4,
+  "commentsPerHour": 0
+}

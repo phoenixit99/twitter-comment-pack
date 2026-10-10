@@ -49,6 +49,16 @@
       }
     ],
     "reuseSourceMedia": true,
+    "imageLibrary": {
+      "enabled": false,
+      "dir": "data/images",
+      "chance": 1
+    },
+    "approval": {
+      "enabled": false,
+      "expireMinutes": 720,
+      "pollSeconds": 30
+    },
     "ownUsername": "your_handle_here",
     "autoTune": {
       "enabled": false,
