@@ -1,8 +1,8 @@
-# 20 bài mẫu cho 2 tuần đầu (đăng tay)
+# 20 bài mẫu (bài đầu tiên + mẫu giọng)
 
-Mỗi bài cần một ảnh thật của tài khoản (gợi ý ảnh ở dòng *Ảnh*). Tỷ lệ: 8 ăn uống, 5 một ngày, 4 gym, 3 tiền bạc (1 bài/Chủ nhật, bài thứ 3 dành cho tuần 3).
+Dùng để đăng tay vài bài đầu cho profile không trống, và làm mẫu khi chỉnh prompt. Ảnh là ảnh AI của Maya (gợi ý ở dòng *Ảnh*); đặt tên file theo gợi ý đó khi bỏ vào thư viện ảnh. Tỷ lệ: 8 ăn uống, 5 một ngày, 4 gym, 3 tiền bạc (1 bài/Chủ nhật, bài thứ 3 dành cho tuần 3).
 
-Đăng 1 bài/ngày, giờ khoảng 12:00 hoặc 20:00. Bot lo các khung còn lại.
+Bài tiền bạc Chủ nhật vẫn đăng tay từ file này (bot không tự viết bài tiền bạc).
 
 ---
 

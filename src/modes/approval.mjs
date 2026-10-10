@@ -6,7 +6,7 @@
  * getUpdates, and only posts to X when the configured chat presses Đăng.
  * Replying to a draft message with new text replaces the draft.
  */
-import { postTweet, uploadImageFromUrl } from '../lib/twitter-http.mjs';
+import { postTweet, uploadImageFromUrl, uploadImageFromFile } from '../lib/twitter-http.mjs';
 import { telegramCall } from '../lib/telegram.mjs';
 import { addPost } from '../lib/post-history.mjs';
 import {
@@ -46,6 +46,14 @@ async function closeMessage(cfg, d, note) {
 
 async function publishDraft(cfg, d, log) {
   const mediaIds = [];
+  if (d.mediaFile) {
+    try {
+      const id = await uploadImageFromFile(d.mediaFile, cfg.cookiesFile);
+      if (id) mediaIds.push(id);
+    } catch (e) {
+      log(`[approval] own image upload failed ${d.mediaFile}: ${e.message}`);
+    }
+  }
   for (const url of d.mediaUrls || []) {
     try {
       const id = await uploadImageFromUrl(url, cfg.cookiesFile);
@@ -64,6 +72,7 @@ async function publishDraft(cfg, d, log) {
     sourceTweetId: d.sourceTweetId,
     postedAt: new Date().toISOString(),
     tweetId,
+    mediaFile: d.mediaFile && mediaIds.length ? d.mediaFile : undefined,
     approved: true,
     edited: Boolean(d.edited),
   });

@@ -1,5 +1,5 @@
 {
-  "_note": "Dán các khoá dưới đây vào data/config.json (giữ nguyên cookies, telegram, ai.apiKey của bạn). Thay YOUR_*_LIST_ID bằng ID list X thật (một list dùng chung cho cả 4 nhóm cũng được). Cần telegram.botToken + telegram.chatId vì approval đang bật: bot chỉ soạn nháp, bấm Đăng trên Telegram mới đăng. Xoá khoá _note khi dán.",
+  "_note": "Dán các khoá dưới đây vào data/config.json (giữ nguyên cookies, telegram, ai.apiKey của bạn). Thay YOUR_*_LIST_ID bằng ID list X thật (một list dùng chung cho cả 4 nhóm cũng được). Bot tự đăng (approval tắt). Ảnh: đặt ảnh AI của Maya vào data/maya-images/<food|daily|gym>/ (xem README mục Ảnh). Muốn duyệt từng bài qua Telegram thì đặt approval.enabled = true. Xoá khoá _note khi dán.",
   "mode": "E",
   "modeE": {
     "ownUsername": "mayavo_",
@@ -92,8 +92,13 @@
       }
     ],
     "reuseSourceMedia": false,
-    "approval": {
+    "imageLibrary": {
       "enabled": true,
+      "dir": "data/maya-images",
+      "chance": 0.8
+    },
+    "approval": {
+      "enabled": false,
       "expireMinutes": 720,
       "pollSeconds": 30
     },
