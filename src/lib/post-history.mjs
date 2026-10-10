@@ -32,8 +32,16 @@ function writeHistory(entries) {
   // Write to a temp file then rename, so a crash or a second process never
   // leaves a half-written history behind.
   const tmp = `${HISTORY_PATH}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(entries, null, 2), 'utf-8');
-  fs.renameSync(tmp, HISTORY_PATH);
+  const json = JSON.stringify(entries, null, 2);
+  fs.writeFileSync(tmp, json, 'utf-8');
+  try {
+    fs.renameSync(tmp, HISTORY_PATH);
+  } catch {
+    // Windows can refuse the rename while another program holds the file;
+    // fall back to a direct write rather than lose the entry.
+    fs.writeFileSync(HISTORY_PATH, json, 'utf-8');
+    try { fs.unlinkSync(tmp); } catch {}
+  }
 }
 
 /**
