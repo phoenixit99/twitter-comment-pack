@@ -10,18 +10,38 @@ const HISTORY_PATH = path.resolve('data/post-history.json');
 const MAX_ENTRIES = 600;
 
 function readHistory() {
+  if (!fs.existsSync(HISTORY_PATH)) return [];
+  const raw = fs.readFileSync(HISTORY_PATH, 'utf-8');
   try {
-    if (!fs.existsSync(HISTORY_PATH)) return [];
-    return JSON.parse(fs.readFileSync(HISTORY_PATH, 'utf-8'));
-  } catch {
-    return [];
-  }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {}
+  // Unreadable file: move it aside instead of returning [] and letting the
+  // next write replace weeks of history with a single entry.
+  const aside = HISTORY_PATH.replace(/\.json$/, `.corrupt-${Date.now()}.json`);
+  try {
+    fs.renameSync(HISTORY_PATH, aside);
+    console.error(`[post-history] ${HISTORY_PATH} was unreadable; moved to ${aside}`);
+  } catch {}
+  return [];
 }
 
 function writeHistory(entries) {
   const dir = path.dirname(HISTORY_PATH);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(HISTORY_PATH, JSON.stringify(entries, null, 2), 'utf-8');
+  // Write to a temp file then rename, so a crash or a second process never
+  // leaves a half-written history behind.
+  const tmp = `${HISTORY_PATH}.${process.pid}.tmp`;
+  const json = JSON.stringify(entries, null, 2);
+  fs.writeFileSync(tmp, json, 'utf-8');
+  try {
+    fs.renameSync(tmp, HISTORY_PATH);
+  } catch {
+    // Windows can refuse the rename while another program holds the file;
+    // fall back to a direct write rather than lose the entry.
+    fs.writeFileSync(HISTORY_PATH, json, 'utf-8');
+    try { fs.unlinkSync(tmp); } catch {}
+  }
 }
 
 /**

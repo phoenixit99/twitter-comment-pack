@@ -17,6 +17,7 @@ import { runMetricsSync, getAutoTuneConfig } from './modes/metrics-sync.mjs';
 import { getOwnUsername } from './lib/content-plan.mjs';
 import { migrateConfig } from './lib/config-migrate.mjs';
 import { runWarmup } from './warmup.mjs';
+import { acquireLock } from './lib/instance-lock.mjs';
 
 const DEBUG = process.argv.includes('--debug');
 const RUN_LOG = 'data/run.log';
@@ -107,6 +108,12 @@ async function runHybridLoop(cfg) {
 }
 
 async function main() {
+  const lock = acquireLock();
+  if (!lock.ok) {
+    log(`Another bot process is already running (pid ${lock.pid}). Exiting so posts are not duplicated.`);
+    process.exit(0);
+  }
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => process.exit(0));
   log('Twitter Comment Pack starting...');
   const cfg = loadConfig();
   initStore('data/store.db');
