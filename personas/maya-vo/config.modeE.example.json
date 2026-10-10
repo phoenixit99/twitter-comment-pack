@@ -1,5 +1,5 @@
 {
-  "_note": "Dán các khoá dưới đây vào data/config.json (giữ nguyên cookies, telegram, ai.apiKey của bạn). Thay YOUR_*_LIST_ID bằng ID list X thật (một list dùng chung cho cả 4 nhóm cũng được). Xoá khoá _note khi dán.",
+  "_note": "Dán các khoá dưới đây vào data/config.json (giữ nguyên cookies, telegram, ai.apiKey của bạn). Thay YOUR_*_LIST_ID bằng ID list X thật (một list dùng chung cho cả 4 nhóm cũng được). Cần telegram.botToken + telegram.chatId vì approval đang bật: bot chỉ soạn nháp, bấm Đăng trên Telegram mới đăng. Xoá khoá _note khi dán.",
   "mode": "E",
   "modeE": {
     "ownUsername": "mayavo_",
@@ -92,6 +92,11 @@
       }
     ],
     "reuseSourceMedia": false,
+    "approval": {
+      "enabled": true,
+      "expireMinutes": 720,
+      "pollSeconds": 30
+    },
     "autoTune": {
       "enabled": false,
       "metric": "views",
@@ -101,7 +106,7 @@
       "syncHours": 2
     },
     "replyBack": {
-      "enabled": true,
+      "enabled": false,
       "pollMinutes": 15,
       "lookbackHours": 24,
       "maxPerHour": 4,

@@ -49,6 +49,11 @@
       }
     ],
     "reuseSourceMedia": true,
+    "approval": {
+      "enabled": false,
+      "expireMinutes": 720,
+      "pollSeconds": 30
+    },
     "ownUsername": "your_handle_here",
     "autoTune": {
       "enabled": false,

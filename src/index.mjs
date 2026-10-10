@@ -17,6 +17,8 @@ import { runMetricsSync, getAutoTuneConfig } from './modes/metrics-sync.mjs';
 import { getOwnUsername } from './lib/content-plan.mjs';
 import { migrateConfig } from './lib/config-migrate.mjs';
 import { runWarmup } from './warmup.mjs';
+import { runApprovalOnce } from './modes/approval.mjs';
+import { getApprovalConfig } from './lib/drafts.mjs';
 
 const DEBUG = process.argv.includes('--debug');
 const RUN_LOG = 'data/run.log';
@@ -231,8 +233,28 @@ async function runAutonomousLoop(cfg) {
     }
   };
 
+  // LOOP 5: Approval — drafts go to Telegram, a person presses Đăng / Bỏ
+  const approvalLoop = async () => {
+    log('[approval] on — Mode E drafts go to Telegram, nothing is posted without Đăng');
+    while (true) {
+      try {
+        await runApprovalOnce(cfg, log);
+      } catch (e) {
+        log(`[approval] loop error: ${e.message}`);
+        await sleep(60 * 1000);
+      }
+    }
+  };
+
   // Run loops concurrently
-  const loops = [postLoop()];
+  const approval = getApprovalConfig(cfg).enabled;
+  const loops = [];
+  if (approval && !(cfg.telegram?.botToken && cfg.telegram?.chatId)) {
+    log('[approval] modeE.approval.enabled needs telegram.botToken and telegram.chatId — post loop is off');
+  } else {
+    loops.push(postLoop());
+    if (approval) loops.push(approvalLoop());
+  }
   if (cfg.commentsPerHour > 0) loops.push(commentLoop());
   else log('[mode-E] commentsPerHour is 0 — list comments are off');
   if (getReplyBackConfig(cfg).enabled) loops.push(replyBackLoop());

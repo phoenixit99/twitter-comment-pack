@@ -6,6 +6,7 @@ import { checkDraft } from '../lib/quality-gate.mjs';
 import { getRecentOpenings, addPost, hasPostedInSlot, getLastFormat, getUsedSourceIds } from '../lib/post-history.mjs';
 import { pickPillar, pickFormat, pickTopic, rankSourceTweets } from '../lib/content-plan.mjs';
 import { getTuning } from './metrics-sync.mjs';
+import { getApprovalConfig, readDraftState, hasDraftInSlot, addDraft, newDraftId } from '../lib/drafts.mjs';
 
 export async function runAutonomousPostMode(cfg, log) {
   // 1. Check schedule slot
@@ -20,6 +21,11 @@ export async function runAutonomousPostMode(cfg, log) {
   const todayDate = new Date().toISOString().split('T')[0];
   if (hasPostedInSlot(slotName, todayDate)) {
     log(`[mode-E] Already posted for slot "${slotName}" today. Waiting for next slot.`);
+    return msUntilNextSlot(cfg);
+  }
+  const approval = getApprovalConfig(cfg).enabled;
+  if (approval && hasDraftInSlot(readDraftState().drafts, slotName, todayDate)) {
+    log(`[mode-E] Draft already made for slot "${slotName}" today. Waiting for next slot.`);
     return msUntilNextSlot(cfg);
   }
 
@@ -102,6 +108,27 @@ export async function runAutonomousPostMode(cfg, log) {
       log(`[mode-E] Rejected content: ${postContent.replace(/\n/g, ' ')}`);
       if (attempt >= maxRetries) return 15 * 60000;
       continue;
+    }
+
+    // 6b. Approval mode: save a draft for Telegram review instead of posting
+    if (approval) {
+      const reuse = cfg.modeE?.reuseSourceMedia !== false;
+      const draft = {
+        id: newDraftId(),
+        status: 'pending',
+        content: postContent,
+        type: slotName,
+        pillar: pillar.name,
+        format: format?.name || null,
+        topic,
+        sourceTweetId: selectedTweet.id,
+        mediaUrls: reuse ? (selectedTweet.mediaUrls || []) : [],
+        createdAt: new Date().toISOString(),
+        telegramMessageId: null,
+      };
+      addDraft(draft);
+      log(`[mode-E] Draft ${draft.id} saved for approval (not posted)`);
+      return 'DRAFTED';
     }
 
     // 7. Upload media if the contextual tweet had any (disable with modeE.reuseSourceMedia=false)

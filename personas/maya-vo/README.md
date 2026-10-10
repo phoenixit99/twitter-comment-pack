@@ -1,6 +1,6 @@
 # Maya Vo — nhân vật nội dung gốc trên X
 
-Mục tiêu: một tài khoản X đăng nội dung **gốc** về đời sống một mình ở thành phố (ăn uống, một ngày, gym, tiền bạc), tăng follower thật và đủ điều kiện **X Creator Revenue Sharing**.
+Mục tiêu: một tài khoản X đăng nội dung **gốc** về đời sống một mình ở thành phố (ăn uống, một ngày, gym, tiền bạc), tăng follower thật và đủ điều kiện **X Original Content Rewards** (chương trình thay Creator Revenue Sharing từ 08/2026).
 
 File trong thư mục này:
 - `README.md` — hồ sơ nhân vật, bio, bài ghim, lịch đăng, quy tắc (file này)
@@ -82,7 +82,7 @@ Trên X, chữ phải đứng được một mình; ảnh làm bài dừng cuộ
 | Gym | 20% | Set tập dạng danh sách, không số đo | Tay (ảnh giày/góc gym) + bot |
 | Tiền bạc / crypto | 15%, **tối đa 1 bài/tuần** | Cách chia lương, bài học, update rất ngắn | Bot hoặc tay, Chủ nhật |
 
-Bot (Mode E) chỉ viết chữ. Cấu hình mẫu đặt `reuseSourceMedia: false` để bot **không đăng lại ảnh của người khác** (tránh "repost gái khác" và vi phạm bản quyền).
+Bot (Mode E) chỉ **soạn nháp chữ**, không tự đăng: config mẫu bật `modeE.approval`, mỗi nháp được gửi qua Telegram và chỉ lên X khi người đứng tên bấm **Đăng** (xem mục 6). Cấu hình mẫu đặt `reuseSourceMedia: false` để bot **không đăng lại ảnh của người khác** (tránh "repost gái khác" và vi phạm bản quyền).
 
 ### Lịch đăng gợi ý
 
@@ -100,7 +100,7 @@ Bài tiền bạc (tối đa 1/tuần) **đăng tay** tối Chủ nhật, lấy 
 
 - Tuần 1–2: đăng tay `seed-posts.md` có ảnh, bật bot 2 bài/ngày. Theo dõi `npm run report`.
 - Reply là kênh tăng follower nhanh nhất ở giai đoạn đầu: trả lời bài của tài khoản food / gym / remote-work Việt Nam lớn hơn mình, giọng Maya, không xin follow. Có thể dùng Mode A với `stylePrompt` lấy từ giọng ở mục 1.
-- Bật `replyBack` để trả lời bình luận dưới bài của mình (prompt riêng `prompts/maya/reply_back.txt`).
+- Trả lời bình luận bằng tay (config mẫu tắt `replyBack`). Trả lời tự động dễ bị coi là tương tác nhân tạo; prompt `prompts/maya/reply_back.txt` vẫn còn nếu sau này muốn dùng để gợi ý câu trả lời.
 - Sau 30 bài: định dạng nào có views cao nhất thì nhân đôi (bật `autoTune`), giữ tiền bạc ở 1 bài/tuần.
 
 ## 6. Cài đặt bot cho Maya
@@ -108,7 +108,21 @@ Bài tiền bạc (tối đa 1/tuần) **đăng tay** tối Chủ nhật, lấy 
 1. Đăng nhập X bằng tài khoản Maya, xuất cookie vào `data/cookies.json` (`guides/01-get-cookies.md`).
 2. Tạo 1–4 list X (đặt riêng tư) gồm các tài khoản food / lifestyle / fitness / tài chính cá nhân tiếng Việt. Bot chỉ đọc list để lấy cảm hứng, không đăng lại nội dung hay ảnh của họ. ID list là dãy số cuối URL `x.com/i/lists/<ID>`.
 3. Mở `config.modeE.example.json`, thay `YOUR_*_LIST_ID` và `ownUsername`, rồi dán `mode`, `modeE`, `postsPerDay`, `commentsPerHour` vào `data/config.json`. Có thể dùng một list cho cả 4 nhóm.
-4. `npm run update-config` để thêm các khoá còn thiếu, rồi `npm start`. Xem bài nào chạy tốt bằng `npm run report`.
+4. Điền `telegram.botToken` và `telegram.chatId` (`guides/02-get-telegram-token.md`). Bắt buộc, vì chế độ duyệt cần Telegram; thiếu thì bot không soạn bài.
+5. `npm run update-config` để thêm các khoá còn thiếu, rồi `npm start`. Xem bài nào chạy tốt bằng `npm run report`.
+
+### Duyệt bài qua Telegram (`modeE.approval`)
+
+Mỗi khung giờ, bot soạn **một** nháp và gửi về Telegram:
+
+- **✅ Đăng**: đăng nguyên văn lên X.
+- **🗑 Bỏ**: không đăng, khung giờ đó bỏ qua (bot không soạn lại).
+- **Sửa**: trả lời (reply) tin nhắn nháp bằng nội dung mới. Bot gửi lại bản mới kèm nút, bấm Đăng để đăng bản đã sửa.
+- Nháp không được xử lý sau `expireMinutes` (mặc định 12 giờ) sẽ hết hạn và không đăng.
+
+Chỉ chat có ID bằng `telegram.chatId` mới bấm được. Nháp lưu ở `data/drafts.json`; bài đã duyệt ghi vào lịch sử với `approved: true` (và `edited: true` nếu đã sửa).
+
+Vì sao cần: X không trả thưởng nội dung gốc cho bài "đăng bằng phương tiện tự động". Với chế độ này, người đứng tên đọc, sửa và quyết định từng bài. Nên sửa ít nhất một chi tiết thật của ngày hôm đó (giá, món, giờ) trước khi đăng.
 
 ## 7. Việc không làm trong 30 ngày đầu
 
@@ -123,6 +137,6 @@ Bài tiền bạc (tối đa 1/tuần) **đăng tay** tối Chủ nhật, lấy 
 Kiểm tra lại trên trang chính sách của X vì điều kiện thay đổi thường xuyên.
 
 - **Nhân vật hư cấu / ảnh AI**: X cấm giả mạo người thật và cấm danh tính gây hiểu lầm nhằm lừa người xem. Nếu Maya là nhân vật dựng (người mẫu thật đóng vai thì ổn hơn; ảnh tạo bằng AI thì rủi ro hơn), nên ghi rõ trong bio, ví dụ "nhân vật / AI persona", và đánh dấu ảnh do AI tạo. Ảnh AI không gắn nhãn có thể bị gắn cờ theo chính sách nội dung tổng hợp (synthetic media).
-- **Tài khoản tự động**: X yêu cầu tài khoản đăng bằng bot bật nhãn "Automated" trong Settings > Your account > Automation. Bot này đăng qua cookie trình duyệt, nên dễ bị coi là hành vi spam nếu đăng dày; giữ 3–4 bài/ngày, không trả lời hàng loạt.
-- **Creator Revenue Sharing** (điều kiện mình biết gần nhất, cần xác minh trong Settings > Monetization): có X Premium, khoảng 5 triệu impressions tự nhiên trong 3 tháng, ít nhất 500 follower Premium, tài khoản đủ 3 tháng tuổi, xác minh danh tính, và quốc gia nhận tiền được hỗ trợ. Tài khoản vi phạm quy định về spam / thao túng tương tác / danh tính gây hiểu lầm có thể bị loại.
+- **Tài khoản tự động**: bài do bot tự đăng **không đủ điều kiện** nhận Original Content Rewards. Vì vậy config mẫu bật chế độ duyệt (mục 6): người đứng tên đọc, sửa và bấm Đăng. Không trả lời bình luận hàng loạt bằng bot.
+- **Original Content Rewards** (theo trang trợ giúp X, kiểm tra lại trong Creator Studio): Premium, ≥500 follower verified, ≥500.000 impression Home Timeline từ người dùng verified trong 90 ngày (impression từ reply không tính), đăng nội dung gốc đều đặn. Tiền chỉ tính impression từ người dùng Premium. Chi tiết ở `analysis/robertnguyen99-ke-hoach-kiem-tien-x.md` trong thư mục dự án.
 - **Tài chính**: không hứa lợi nhuận, không lời khuyên mua bán. Nội dung tiền bạc của Maya đã thiết kế theo hướng này.

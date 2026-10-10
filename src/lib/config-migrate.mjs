@@ -3,6 +3,7 @@
  * structure. Only ADDS missing keys; never overwrites a value the user set.
  * Used by the setup wizard and `npm run update-config`.
  */
+import { APPROVAL_DEFAULTS } from './drafts.mjs';
 
 export const AI_TECH_TOPICS = [
   'Tool AI mới',
@@ -93,6 +94,13 @@ export function migrateConfig(cfg) {
       fillMissing(e.replyBack, REPLY_BACK_DEFAULTS, 'modeE.replyBack', []);
     } else {
       fillMissing(e.replyBack, REPLY_BACK_DEFAULTS, 'modeE.replyBack', added);
+    }
+    if (!e.approval || typeof e.approval !== 'object') {
+      e.approval = {};
+      added.push('modeE.approval');
+      fillMissing(e.approval, APPROVAL_DEFAULTS, 'modeE.approval', []);
+    } else {
+      fillMissing(e.approval, APPROVAL_DEFAULTS, 'modeE.approval', added);
     }
     if (!e.autoTune || typeof e.autoTune !== 'object') {
       e.autoTune = {};
