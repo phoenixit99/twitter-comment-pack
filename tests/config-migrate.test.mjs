@@ -13,7 +13,7 @@ test('adds new Mode E keys from legacy config without mutating input', () => {
   const before = JSON.stringify(oldE);
   const { cfg, added } = migrateConfig(oldE);
   assert.strictEqual(JSON.stringify(oldE), before);
-  assert.deepStrictEqual(added, ['modeE.ownUsername', 'modeE.pillars', 'modeE.reuseSourceMedia', 'modeE.replyBack', 'modeE.autoTune']);
+  assert.deepStrictEqual(added, ['modeE.ownUsername', 'modeE.pillars', 'modeE.reuseSourceMedia', 'modeE.replyBack', 'modeE.approval', 'modeE.imageLibrary', 'modeE.autoTune']);
   assert.strictEqual(cfg.modeE.ownUsername, 'Robert');
   assert.deepStrictEqual(cfg.modeE.pillars[0].listIds, ['L1', 'L2']);
   assert.deepStrictEqual(cfg.modeE.pillars[0].topics, ['BTC']);

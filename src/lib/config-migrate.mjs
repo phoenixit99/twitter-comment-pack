@@ -3,6 +3,8 @@
  * structure. Only ADDS missing keys; never overwrites a value the user set.
  * Used by the setup wizard and `npm run update-config`.
  */
+import { APPROVAL_DEFAULTS } from './drafts.mjs';
+import { IMAGE_LIBRARY_DEFAULTS } from './image-library.mjs';
 
 export const AI_TECH_TOPICS = [
   'Tool AI mới',
@@ -93,6 +95,20 @@ export function migrateConfig(cfg) {
       fillMissing(e.replyBack, REPLY_BACK_DEFAULTS, 'modeE.replyBack', []);
     } else {
       fillMissing(e.replyBack, REPLY_BACK_DEFAULTS, 'modeE.replyBack', added);
+    }
+    if (!e.approval || typeof e.approval !== 'object') {
+      e.approval = {};
+      added.push('modeE.approval');
+      fillMissing(e.approval, APPROVAL_DEFAULTS, 'modeE.approval', []);
+    } else {
+      fillMissing(e.approval, APPROVAL_DEFAULTS, 'modeE.approval', added);
+    }
+    if (!e.imageLibrary || typeof e.imageLibrary !== 'object') {
+      e.imageLibrary = {};
+      added.push('modeE.imageLibrary');
+      fillMissing(e.imageLibrary, IMAGE_LIBRARY_DEFAULTS, 'modeE.imageLibrary', []);
+    } else {
+      fillMissing(e.imageLibrary, IMAGE_LIBRARY_DEFAULTS, 'modeE.imageLibrary', added);
     }
     if (!e.autoTune || typeof e.autoTune !== 'object') {
       e.autoTune = {};

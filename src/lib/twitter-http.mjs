@@ -471,6 +471,15 @@ export async function uploadImageFromUrl(imageUrl, cookiesFilePath) {
       res.on('error', reject);
     }).on('error', reject);
   });
+  return uploadImageBuffer(imgBuffer, cookiesFilePath);
+}
+
+/** Upload a local image file (Mode E image library). */
+export async function uploadImageFromFile(filePath, cookiesFilePath) {
+  return uploadImageBuffer(fs.readFileSync(filePath), cookiesFilePath);
+}
+
+export async function uploadImageBuffer(imgBuffer, cookiesFilePath) {
   const b64 = imgBuffer.toString('base64');
   
   const headers = await makeHeaders('POST', '/i/media/upload.json', cookiesFilePath);
