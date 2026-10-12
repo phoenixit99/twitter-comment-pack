@@ -6,7 +6,7 @@ import { checkDraft } from '../lib/quality-gate.mjs';
 import { getRecentOpenings, addPost, hasPostedInSlot, getLastFormat, getUsedSourceIds, getUsedMediaFiles } from '../lib/post-history.mjs';
 import { pickPillar, pickFormat, pickTopic, rankSourceTweets } from '../lib/content-plan.mjs';
 import { getTuning } from './metrics-sync.mjs';
-import { chooseImage, imageHint } from '../lib/image-library.mjs';
+import { chooseImage, imageHint, sourceMediaPolicy, withPhotoCredit } from '../lib/image-library.mjs';
 import { getApprovalConfig, readDraftState, hasDraftInSlot, addDraft, newDraftId } from '../lib/drafts.mjs';
 
 export async function runAutonomousPostMode(cfg, log) {
@@ -116,19 +116,22 @@ export async function runAutonomousPostMode(cfg, log) {
       continue;
     }
 
+    // Source-tweet images, only when there is no library image (policy per pillar)
+    const media = sourceMediaPolicy(cfg, pillar.name);
+    const sourceMediaUrls = !mediaFile && media.reuse ? (selectedTweet.mediaUrls || []) : [];
+
     // 6b. Approval mode: save a draft for Telegram review instead of posting
     if (approval) {
-      const reuse = cfg.modeE?.reuseSourceMedia !== false;
       const draft = {
         id: newDraftId(),
         status: 'pending',
-        content: postContent,
+        content: media.credit && sourceMediaUrls.length ? withPhotoCredit(postContent, selectedTweet.author) : postContent,
         type: slotName,
         pillar: pillar.name,
         format: format?.name || null,
         topic,
         sourceTweetId: selectedTweet.id,
-        mediaUrls: !mediaFile && reuse ? (selectedTweet.mediaUrls || []) : [],
+        mediaUrls: sourceMediaUrls,
         mediaFile,
         createdAt: new Date().toISOString(),
         telegramMessageId: null,
@@ -148,9 +151,9 @@ export async function runAutonomousPostMode(cfg, log) {
       } catch (e) {
         log(`[mode-E] Failed to upload own image ${mediaFile}: ${e.message}`);
       }
-    } else if (cfg.modeE?.reuseSourceMedia !== false && selectedTweet.mediaUrls && selectedTweet.mediaUrls.length > 0) {
-      log(`[mode-E] Context tweet has ${selectedTweet.mediaUrls.length} image(s). Uploading...`);
-      for (const imgUrl of selectedTweet.mediaUrls) {
+    } else if (sourceMediaUrls.length > 0) {
+      log(`[mode-E] Context tweet has ${sourceMediaUrls.length} image(s). Uploading...`);
+      for (const imgUrl of sourceMediaUrls) {
         try {
           const mId = await uploadImageFromUrl(imgUrl, cfg.cookiesFile);
           if (mId) mediaIds.push(mId);
@@ -158,6 +161,7 @@ export async function runAutonomousPostMode(cfg, log) {
           log(`[mode-E] Failed to upload image ${imgUrl}: ${e.message}`);
         }
       }
+      if (media.credit && mediaIds.length > 0) postContent = withPhotoCredit(postContent, selectedTweet.author);
     }
 
     // 8. Post to Twitter

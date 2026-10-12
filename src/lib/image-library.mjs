@@ -56,6 +56,24 @@ export function imageHint(file) {
 }
 
 /**
+ * May this post re-use the source tweet's images? (when no library image)
+ *   modeE.reuseSourceMedia        false → never (default true, legacy)
+ *   modeE.reuseSourceMediaPillars only for these pillars, e.g. ["food","daily"]
+ *   modeE.creditSourceMedia       append "📷 @author" so the photo is credited
+ */
+export function sourceMediaPolicy(cfg, pillarName) {
+  const e = cfg.modeE || {};
+  if (e.reuseSourceMedia === false) return { reuse: false, credit: false };
+  const pillars = e.reuseSourceMediaPillars;
+  const reuse = !Array.isArray(pillars) || pillars.includes(pillarName);
+  return { reuse, credit: reuse && Boolean(e.creditSourceMedia) };
+}
+
+export function withPhotoCredit(text, author) {
+  return author ? `${text}\n\n📷 @${String(author).replace(/^@/, '')}` : text;
+}
+
+/**
  * Pick the image for this post, or null (library off, empty, or chance roll).
  * @param {string[]} usedOrder mediaFile of past posts, oldest first
  */

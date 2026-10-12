@@ -3,7 +3,16 @@ import assert from 'node:assert';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { listImages, pickImage, imageHint, chooseImage } from '../src/lib/image-library.mjs';
+import { listImages, pickImage, imageHint, chooseImage, sourceMediaPolicy, withPhotoCredit } from '../src/lib/image-library.mjs';
+
+test('source media policy: off, all pillars (legacy), or listed pillars with credit', () => {
+  assert.deepStrictEqual(sourceMediaPolicy({ modeE: { reuseSourceMedia: false } }, 'food'), { reuse: false, credit: false });
+  assert.deepStrictEqual(sourceMediaPolicy({}, 'gym'), { reuse: true, credit: false });
+  const cfg = { modeE: { reuseSourceMedia: true, reuseSourceMediaPillars: ['food', 'daily'], creditSourceMedia: true } };
+  assert.deepStrictEqual(sourceMediaPolicy(cfg, 'food'), { reuse: true, credit: true });
+  assert.deepStrictEqual(sourceMediaPolicy(cfg, 'gym'), { reuse: false, credit: false });
+  assert.strictEqual(withPhotoCredit('Bún 35k.', '@abc'), 'Bún 35k.\n\n📷 @abc');
+});
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'imglib-'));
 fs.mkdirSync(path.join(dir, 'food'));

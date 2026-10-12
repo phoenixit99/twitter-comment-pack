@@ -136,7 +136,9 @@
         "instruction": "1 dòng mở đầu + 3 dòng ngắn (nguyên liệu, bài tập, mốc giờ hoặc việc trong ngày). Xuống dòng giữa các ý."
       }
     ],
-    "reuseSourceMedia": false,
+    "reuseSourceMedia": true,
+    "reuseSourceMediaPillars": ["food", "daily"],
+    "creditSourceMedia": true,
     "imageLibrary": {
       "enabled": true,
       "dir": "data/maya-images",

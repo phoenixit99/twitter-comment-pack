@@ -122,7 +122,13 @@ Trên X, chữ phải đứng được một mình; ảnh giúp bài dừng cu�
 
 Định dạng bot xoay vòng: ghi chú ngắn, chuyện sau bức ảnh, câu hỏi mở nhẹ, danh sách ngắn.
 
-Config mẫu: bot **tự đăng** (`approval.enabled: false`), ảnh từ `imageLibrary`. Cấu hình mẫu đặt `reuseSourceMedia: false` để bot **không đăng lại ảnh của người khác** (tránh "repost gái khác" và vi phạm bản quyền).
+Config mẫu: bot **tự đăng** (`approval.enabled: false`), ảnh từ `imageLibrary`.
+
+**Tạm thời khi thư mục ảnh còn trống:** bot được dùng lại ảnh của bài nguồn trong list, nhưng chỉ cho nhóm `food` và `daily` (`reuseSourceMediaPillars`), và luôn ghi nguồn `📷 @tác_giả` ở cuối bài (`creditSourceMedia`). Khi đã có ảnh trong `data/maya-images/`, bot dùng ảnh thư viện trước. Lưu ý:
+- List chỉ nên gồm tài khoản đăng ảnh đồ ăn / phong cảnh. Ảnh có mặt người thật **không được** đăng dưới tên Maya; nếu list có tài khoản hay đăng selfie, bỏ họ khỏi list hoặc đặt `reuseSourceMedia: false`.
+- Ảnh vẫn là của người chụp. Nếu ai yêu cầu gỡ thì gỡ ngay.
+- Bài dùng lại ảnh của người khác không được tính là nội dung gốc cho chương trình thưởng của X.
+- Khi thư viện đủ ảnh, đặt `reuseSourceMedia: false`.
 
 ### Lịch đăng gợi ý
 
